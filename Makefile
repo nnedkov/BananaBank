@@ -4,14 +4,17 @@
 #   Oct 2014                #
 #############################
 
+DB_USER = root
+DB_PASS = root
+
 
 create_db:
-	mysql --user=root --password=root -e "CREATE DATABASE my_bank DEFAULT CHARACTER SET utf8;"
-	mysql --user=root --password=root --database=my_bank -A < sql/tabcreate.sql
+	mysql --user=$(DB_USER) --password=$(DB_PASS) -e "CREATE DATABASE my_bank DEFAULT CHARACTER SET utf8;"
+	mysql --user=$(DB_USER) --password=$(DB_PASS) --database=my_bank -A < sql/tabcreate.sql
 
 fill_db:
-	mysql --user=root --password=root --database=my_bank -A < sql/tabfill.sql
+	mysql --user=$(DB_USER) --password=$(DB_PASS) --database=my_bank -A < sql/tabfill.sql
 
 drop_db:
-	mysql --user=root --password=root -e "DROP DATABASE my_bank;"
+	mysql --user=$(DB_USER) --password=$(DB_PASS) -e "DROP DATABASE my_bank;"
 
