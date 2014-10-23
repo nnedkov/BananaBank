@@ -22,7 +22,7 @@ switch ($action) {
 	case 'logout_client':	return logout_client(); // done + tested
 	case 'get_account_client':	return get_account_client(); // Elias
 	case 'get_trans_client':	return get_trans_client(); // done + tested
-	case 'get_trans_client_pdf':	return get_trans_client_pdf();
+	case 'get_trans_client_pdf':	return get_trans_client_pdf(); // (how to download the actual file)
 	case 'get_tancode_id':		return get_tancode_id(); // Elias
 	case 'set_trans_form':	return set_trans_form(); // Elias
 	case 'set_trans_file':	return set_trans_file(); // Elias
@@ -33,7 +33,7 @@ switch ($action) {
 	case 'get_clients':	return get_clients(); // Elias
 	case 'get_account_emp':	return get_account_emp(); // Elias
 	case 'get_trans_emp':	return get_trans_emp(); // done + tested
-	case 'get_trans_emp_pdf':	return get_trans_emp_pdf();
+	case 'get_trans_emp_pdf':	return get_trans_emp_pdf(); // (how to download the actual file)
 	case 'get_trans':	return get_trans(); // done + tested
 	case 'approve_trans':	return approve_trans(); // done + tested (transfer actual money)
 	case 'reject_trans':	return reject_trans(); // done + tested (send email to client)
@@ -583,7 +583,13 @@ function reject_trans() {
 		print_debug_message('Exception occured: ' . $e->getMessage());
 		return error('Something went wrong. Please try again');
 	}
+
 	// TODO: send email to client to inform him that his transaction was rejected
+	//$to = 'somebody@example.com';
+	//$subject = 'My subject';
+	//$txt = 'Hello world!';
+	//$headers = 'From: webmaster@example.com' . '\r\n' . 'CC: somebodyelse@example.com';
+	//mail($to, $subject, $txt, $headers);
 
 	$res['status'] = true;
 	$res['message'] = null;
@@ -722,6 +728,11 @@ function reject_user() {
 	}
 
 	// TODO: send email to user informing him that his registration was rejected
+	//$to = 'somebody@example.com';
+	//$subject = 'My subject';
+	//$txt = 'Hello world!';
+	//$headers = 'From: webmaster@example.com' . '\r\n' . 'CC: somebodyelse@example.com';
+	//mail($to, $subject, $txt, $headers);
 
 	$res['status'] = true;
 	$res['message'] = null;

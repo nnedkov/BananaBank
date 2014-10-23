@@ -1,0 +1,86 @@
+/* CSS Document */
+
+body{
+padding:0px;
+margin:0px;
+background-color:#7F4F20;
+}
+td {
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:11px;
+}
+pre{
+padding:0px;
+margin:0px;
+}
+.menu{
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:11px;
+color:#714101;
+background-image:url(images/index_29.gif);
+background-repeat:no-repeat;
+background-position:left;
+padding-left:30px;
+font-weight:bold;
+padding-top:8px;
+padding-bottom:8px;
+}
+.menu a{ color:#714101; text-decoration:none; }
+.menu a:hover{ color:#F8F979; text-decoration:none; }
+.body1 {
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:11px;
+color:#FFC16E;
+text-align:justify;
+padding-left:20px;
+padding-right:20px;
+}
+.body2 {
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:22px;
+color:#F4E61C;
+text-align:justify;
+padding-left:20px;
+padding-right:20px;
+}
+
+.tables
+{
+font-family:Verdana, Arial, Helvetica, sans-serif;
+width:100%;
+border-collapse:collapse;
+}
+.tables td, .tables th 
+{
+font-size:1.2em;
+border:1px solid #F4E61C;
+padding:3px 7px 2px 7px;
+}
+.tables th 
+{
+font-size:1.4em;
+text-align:left;
+padding-top:5px;
+padding-bottom:4px;
+background-color:#2E1C09;
+color:#fff;
+}
+.tables tr.alt td 
+{
+color:#000;
+background-color:#EAF2D3;
+}
+
+.body1 a{ color:#ffffff; text-decoration:none; }
+.body1 a:hover{ color:#000000; text-decoration:underline; }
+.footer{
+font-family:Verdana, Arial, Helvetica, sans-serif;
+font-size:10px;
+color:#F8F979;
+text-align:left;
+padding-top:15px;
+padding-left:15px;
+padding-bottom:15px;
+}
+.footer a{ color:#573201; text-decoration:none; }
+.footer a:hover{ color:#F8F979; text-decoration:none; }
