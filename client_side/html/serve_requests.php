@@ -551,7 +551,6 @@ function set_trans_form() {
 
 	print_debug_message('Sanitizing input...');	
 	$tancode_value = $_POST['tancode_value'];
-	return error(strlen($tancode_value));
 	if(strlen($tancode_value) != 15)
 		return error('Tancode length should be 15!');
 	
@@ -560,7 +559,6 @@ function set_trans_form() {
 		$con = get_dbconn();
 
 		$tancode_id = mysql_real_escape_string($tancode_id);		
-		return error($tancode_value);
 		$query = 'select Is_used from TRANSACTION_CODES where 
 			 email= "' . $email_src . '" and
 			 trans_code_id= "' . $tancode_id . '" and 

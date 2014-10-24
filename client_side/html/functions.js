@@ -159,10 +159,8 @@ function getTancode()
     $(function(){ 
         var data = "action=get_tancode_id";
         $.post(requestUrl, data, success, "json");
-        alert("req sent");
         function success (resp)
         {
-		        alert("got res");
             if (resp.status=="true")
             {
 				document.getElementById("tanCode").innerHTML="TAN N: "+resp.tan_code_id;
