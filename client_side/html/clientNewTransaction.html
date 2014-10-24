@@ -28,11 +28,15 @@
 						<table width="215" border="0" align="center" cellpadding="3" cellspacing="0">
 							<tr>
 								<td width="59" class="body1">Email:</td>
-								<td><p><script type="text/javascript"> getCookie("client");</script></p></td>
+							</tr>
+							<tr>
+								<td class="body1" id="accountEmail"></td>
 							</tr>
 							<tr>
 								<td class="body1">Balance:</td>
-								<td><p><script type="text/javascript"> getAccountClient();</script></p></td>
+							</tr>
+							<tr>
+								<td class="body1" id="accountBalance"></td>
 							</tr>
 							<tr>
 								<td colspan="2" align="right" class="field" style="padding-right:12px;">
@@ -41,9 +45,10 @@
 									</label></td>
 							</tr>
 						</table>
+						<script type="text/javascript"> getAccountClient();</script>
 						</div>
 					</td>
-				</tr>
+				</tr><!--User Area End-->
 				<tr>
 					<td style="padding-left:20px; padding-right:10px;">
 						<div style="text-align:center;"><img src="images/index_47.gif" width="161" height="28" alt="" /></div>
@@ -82,11 +87,7 @@
 								<td><label><input type="text" name="amount" id="amount" style="width:90%;" /></label></td>
 							  </tr>
 							  <tr>
-								<td class="body3" >TAN Code N:</td>
-								<td><label><input type="text" name="codeId" id="codeId" value="" style="width:90%;" READONLY/></label></td>
-							  </tr>
-							  <tr>
-								<td class="body3" >TAN Code Value:</td>
+								<td class="body3" id="tanCode"></td>
 								<td><label><input type="text" name="code" id="code" style="width:90%;" /></label></td>
 							  </tr>
 							  <tr>

@@ -5,7 +5,7 @@ $DEBUG_MODE = true;
 $SILENT_MODE = true;
 $DB_HOST = 'localhost';
 $DB_USER = 'root';
-$DB_PASS = 'root';
+$DB_PASS = 'alpha12';
 $DB_NAME = 'my_bank';
 
 if ($_SERVER['REQUEST_METHOD'] != 'POST')
@@ -529,7 +529,7 @@ function transfer_money($src,$dst,$amount,$approval){
 }
 
 function set_trans_form() {
-	print_debug_message('Checking if parameters were set during login 			in the session...');
+	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
 	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
@@ -543,21 +543,24 @@ function set_trans_form() {
 		return error('Destination email not specified');
 	if (empty($_POST['amount']))
 		return error('amount not specified');
-	if (empty($_POST['tancode_id']))
-		return error('TAN code ID not specified');
 	if (empty($_POST['tancode_value']))
-		return error('TAN not specified');
+		return error('TAN code value not specified');
+	if (empty($_SESSION['tan_code_id']))
+		return error('No tancode ID stored in the session');
+	$tancode_id = $_SESSION['tan_code_id'];
 
-	print_debug_message('Sanitizing input...');
-	$tancode_id = test_input($_POST['tancode_id']);
-	$tancode_value = test_input($_POST['tancode_value']);
+	print_debug_message('Sanitizing input...');	
+	$tancode_value = $_POST['tancode_value'];
+	return error(strlen($tancode_value));
+	if(strlen($tancode_value) != 15)
+		return error('Tancode length should be 15!');
+	
 	
 	try {
 		$con = get_dbconn();
 
-		$tancode_id = mysql_real_escape_string($tancode_id);
-		$tancode_value = mysql_real_escape_string($tancode_value);		
-		
+		$tancode_id = mysql_real_escape_string($tancode_id);		
+		return error($tancode_value);
 		$query = 'select Is_used from TRANSACTION_CODES where 
 			 email= "' . $email_src . '" and
 			 trans_code_id= "' . $tancode_id . '" and 
@@ -607,7 +610,7 @@ function set_trans_file() {
 		return error('Invalid operation for employee');
 
 	if (empty($_SESSION['tan_code_id']))
-		return error('No tancode ID sored in the session');
+		return error('No tancode ID stored in the session');
 
 	$email_src = $_SESSION['email'];
 	$tancode_id = $_SESSION['tan_code_id'];
@@ -1335,4 +1338,5 @@ function get_dbconn() {
 }
 
 ?>
+
 

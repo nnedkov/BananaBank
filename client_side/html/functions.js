@@ -2,12 +2,6 @@
 var requestUrl = "serve_requests.php";
 //CLIENT
 
-/*$(document).ready(function(){
-	$("#loginClient").click(function(event){
-      event.preventDefault();
-	  window.location = "content.html";
-    });
-});**/
 
 $(document).ready(function(){
 	$("#loginClient").click(function(event){
@@ -20,7 +14,6 @@ $(document).ready(function(){
         {
             if (resp.status=="true")//TODO
             {
-                setCookie("client", email, 120);
 				window.open("clientInitial.html", "_self");
             } else {
 		alert(resp.message);
@@ -63,7 +56,9 @@ $(document).ready(function(){
             {
                 alert("Thank you for registering! We will send your transaction codes to your email once your registration is approved.");
 				window.open("index.html", "_self");
-            }
+            } else {
+		alert(resp.message);
+	    }
         }
     });
 });
@@ -76,7 +71,6 @@ function logoutClient()
         
         function success (resp)
         {
-            setCookie("client", "client", 120);
             window.open("index.html", "_self");
         }
     });
@@ -92,8 +86,11 @@ function getAccountClient()
         {
             if (resp.status=="true")
             {
-                //TODO
-            }
+                document.getElementById("accountEmail").innerHTML=resp.email; 
+				document.getElementById("accountBalance").innerHTML=resp.balance; 
+            } else {
+		alert(resp.message);
+	    }
         }
     });
 }
@@ -128,7 +125,9 @@ function getHistoryClient()
                         row.append($("<td>" + val + "</td>"));
                     });*/
                 });
-            }
+            } else {
+		alert(resp.message);
+	    }
         }
     });
 }   
@@ -138,9 +137,8 @@ $(document).ready(function(){
       event.preventDefault();
 	  var dest = document.getElementById('Demail').value;
         var amount = document.getElementById('amount').value;
-		var tancode_id = document.getElementById('codeId').value;
         var tancode_value = document.getElementById('code').value;
-        var data = "action=set_trans_form&email_dest="+dest+"&amount="+amount+"&tancode_id="+tancode_id+"&tancode_value="+tancode_value;
+        var data = "action=set_trans_form&email_dest="+dest+"&amount="+amount+"&tancode_value="+tancode_value;
         $.post(requestUrl, data, success, "json");
         
         function success (resp)
@@ -148,32 +146,13 @@ $(document).ready(function(){
             if (resp.status=="true")
             {
                 alert("Transaction was submitted. If the amount you transfered is bigger than 10.000 Bananas, wait for approval!");
-				window.open("clientInitial.html");
-            }
-        }
+				window.open("clientInitial.html", "_self");
+            }else {
+		alert(resp.message);
+	    }
+        } 
     });
 });
-
-/*function newTransactionClient()
-{
-    $(function(){ 
-	
-		var dest = document.getElementById('Demail').value;
-        var amount = document.getElementById('amount').value;
-		var tancode_id = document.getElementById('codeId').value;
-        var tancode_value = document.getElementById('code').value;
-        var data = "action=set_trans_form&email_dest="+dest+"&amount="+amount+"&tancode_id="+tancode_id+"&tancode_value="+tancode_value;
-        $.post(requestUrl, data, success, "json");
-        
-        function success (resp)
-        {
-            if (resp.status=="true")
-            {
-                alert("Transcation was submitted. If the amount you transfered is bigger than 10.000 Bananas, wait for approval!");
-            }
-        }
-    });
-}*/
 
 function getTancode()
 {
@@ -186,8 +165,7 @@ function getTancode()
 		        alert("got res");
             if (resp.status=="true")
             {
-		alert(resp.tan_code_id);
-                $("#codeId").val(resp.tan_code_id);
+				document.getElementById("tanCode").innerHTML="TAN N: "+resp.tan_code_id;
             } else {
 	      alert(resp.message);
 	    }
@@ -202,7 +180,7 @@ $(document).ready(function(){
  		alert("works");
          $.ajax({
              type: 'POST',
-             url: requestUrl+"?action=set_trans_file&tancode_id="+document.getElementById('codeId').value,
+             url: requestUrl+"?action=set_trans_file",
              data: data,
              cache: false,
              contentType: false,
@@ -211,7 +189,7 @@ $(document).ready(function(){
              if (resp.status=="true")
             {
                 alert("Transaction was submitted. If the amount you transfered is bigger than 10.000 Bananas, wait for approval!");
-				window.open("clientInitial.html");
+				window.open("clientInitial.html", "_self");
             }
 			else
 			{
@@ -225,29 +203,6 @@ $(document).ready(function(){
          });
     });
 });
-
-/*function newFileTransactionClient()
-{
- 	$(function() {
-         //data = new FormData($('#form')[0]);
- 		data = $("#file").val();
- 		alert("works");
-         $.ajax({
-             type: 'POST',
-             url: requestUrl+"?action=set_trans_file&tancode_id="+document.getElementById('codeId').value,
-             data: data,
-             cache: false,
-             contentType: false,
-             processData: false
-         }).done(function(data) {
-             console.log(data);
-         }).fail(function(jqXHR,status, errorThrown) {
-             console.log(errorThrown);
-             console.log(jqXHR.responseText);
-             console.log(jqXHR.status);
-         });
- 	});
-}*/
 
 //EMPLOYEE
 $(document).ready(function(){
@@ -264,29 +219,12 @@ $(document).ready(function(){
             {
                 window.open("employeeInitial.html", "_self");
             } else
-		alert(resp.message);
+		{alert(resp.message);}
+		
         }
     });
 });
-/*function loginEmployee()
-{
-    $(function(){    
-        var email = document.getElementById('Lemail').value;
-        var pwd = document.getElementById('Lpwd').value;
-        
-        var data = "action=login_emp&email="+email+"&pass="+pwd;
-        $.post(requestUrl, data, success, "json");
-        
-        function success(resp)
-        {
-            if (resp.status=="true")//TODO
-            {
-                setCookie("emp",resp.cookie,10);
-                window.open("employeeInitial.html");
-            }
-        }
-    });
-}*/
+
 $(document).ready(function(){
 	$("#registerEmployee").click(function(event){
       event.preventDefault();
@@ -311,39 +249,11 @@ $(document).ready(function(){
             {
                alert("Thank you! We send a confirmation to your email address");
 			   window.open("index.html", "_self");
-            }
+            } else
+		{alert(resp.message);}
         }
     });
 });
-
-/*function registerEmployee()
-{
-    $(function(){  
-        var email = document.getElementById('Remail').value;
-        var pwd = document.getElementById('Rpwd').value;
-        var pwdRep = document.getElementById('RpwdRep').value;
-        
-        if (pwd==pwdRep)
-        {
-            var data = "action=reg_emp&email="+email+"&pass="+pwd;
-            $.post(requestUrl, data, success, "json");
-        }
-		else
-		{
-			alert ("Password confirmation is wrong!");
-			return;
-		}
-        
-        function success(resp)
-        {
-            if (resp.status=="true")//TODO
-            {
-               alert("Thank you! We send a confirmation to your email address");
-			   window.open("index.html", "_self");
-            }
-        }
-    });
-}*/
 
 function logoutEmployee()
 {
@@ -523,9 +433,73 @@ function allUsers()
                     var row = $("<tr/>");
                     $("#tablesClients").append(row);
 					row.append($("<td>" + value + "</td>"));
-					row.append($("<td><input type='image' id='userDetails"+index+"' onClick='userDetails(this.id)' src='images/ButtonDetails.gif'/></td>"));
+					row.append($("<td><input type='image' id='userDetails"+(index+1)+"' onClick='userDetails(this.id)' src='images/ButtonDetails.gif'/></td>"));
                 });
-            }
+            }else{alert(resp.message);}
+        }
+    });
+}
+
+function userDetails(id)
+{
+		var table = document.getElementById("tablesClients");
+		var rowId = id.slice(-1);
+		var row = table.rows[rowId];
+		var text = row.cells[0].innerHTML;
+		localStorage.setItem('_email', text);
+		window.open("employeeViewClient.html", "_self");
+}
+
+function accountDetails()
+{
+	$(function(){  
+		var email = localStorage.getItem('_email');
+        var data = "action=get_account_emp&email="+email;
+        $.post(requestUrl, data, success, "json");
+        
+        function success(resp)
+        {
+            if (resp.status=="true")
+            {
+                    var row = $("<tr/>");
+                    $("#tablesAccount").append(row);
+					row.append($("<td>" + email + "</td>"));
+					row.append($("<td>" + resp.balance + "</td>"));
+            }else{alert(resp.message);}
+        }
+    });
+	
+}
+
+function transactionsEmployee()
+{
+	$(function(){  
+		var email = localStorage.getItem('_email');
+        var data = "action=get_trans_emp&email="+email;
+        $.post(requestUrl, data, success, "json");
+        
+        function success(resp)
+        {
+            if (resp.status=="true")
+            {
+                
+                $.each(resp.trans, function(index, value){
+                    var row = $("<tr />");
+                    $("#tablesTransOfAccount").append(row);
+					row.append($("<td>" + value[0] + "</td>"));
+					row.append($("<td>" + value[1] + "</td>"));
+					row.append($("<td>" + value[2] + "</td>"));
+					row.append($("<td>" + value[3] + "</td>"));
+					if (value[4]=="1")
+					{
+						row.append($("<td><img src='images/approved.gif' width='65' height='20' alt='' /></td>"));
+					}
+					else
+					{
+						row.append($("<td><img src='images/waiting.gif' width='65' height='20' alt='' /></td>"));
+					}
+                });
+            }else{alert(resp.message);}
         }
     });
 }

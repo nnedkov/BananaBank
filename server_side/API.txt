@@ -1,0 +1,50 @@
+CLIENT API
+
+* Get my account details
+SEND: (POST request)
+	"action"="get_account_client"
+RECEIVE: (JSON object)
+	{"status": "true" (string) [or "false"],
+	 "message": null [or "some_message" in case the status is "false"],
+	 "balance": balance (string)}
+
+* Make transaction through HTML form
+SEND: (POST request)
+	"action"="set_trans_form"
+	"email_dest"=...
+	"amount"=...
+	"tancode_id"=...
+	"tancode_value"=...
+RECEIVE: (JSON object)
+	{"status": "true" (string) [or "false"],
+	 "message": null [or "some_message" in case the status is "false"]}
+
+* Make transaction through uploading a file
+SEND: (POST request)
+	"action"="set_trans_file"
+	will tell you later
+RECEIVE: will tell you later
+
+
+
+EMPLOYEE API
+
+* Get account details of some client
+SEND: (POST request)
+	"action"="get_account_emp"
+	"email"=...
+RECEIVE: (JSON object)
+	{"status": "true" (string) [or "false"],
+	 "message": null [or "some_message" in case the status is "false"],
+	 "balance": balance (string)}
+
+* Get transaction history of some client
+SEND: (POST request)
+	"action"="get_trans_emp"
+	"email"=...
+RECEIVE: (JSON object)
+	{"status": "true" (string) [or "false"],
+	 "message": null [or "some_message" in case the status is "false"],
+	 "trans": [trans_id1 (int), email_dest1 (string), amount1 (int), date1 (string), is_approved1 (boolean)],
+		   trans_id2, ...], ...]
+
