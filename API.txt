@@ -1,59 +1,12 @@
 CLIENT API
 
-* Registrate
-SEND: (POST request)
-	"action"="reg_client"
-	"email"=...
-	"pass"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Login
-SEND: (POST request)
-	"action"="login_client"
-	"email"=...
-	"pass"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Logout
-SEND: (POST request)
-	"action"="logout_client"
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
 * Get my account details
 SEND: (POST request)
 	"action"="get_account_client"
 RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
+	{"status": "true" (string) [or "false"],
 	 "message": null [or "some_message" in case the status is "false"],
-	 "account_details": will tell you later what you receive}
-
-* Get my transaction history
-SEND: (POST request)
-	"action"="get_trans_client"
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"],
-	 "trans": [[trans_id1 (string), email_dest1 (string), amount1 (string), date1 (string), is_approved1 (string)],
-		   [trans_id2, ...], ...]
-
-* Get my transaction history as pdf
-SEND: (POST request)
-	"action"="get_trans_client_pdf"
-RECEIVE: will tell you later what you receive
-
-* Request id of an unused TAN code
-SEND: (POST request)
-	"action"="get_tancode_id"
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"],
-	 "tancode_id": ...}
+	 "balance": balance (string)}
 
 * Make transaction through HTML form
 SEND: (POST request)
@@ -63,7 +16,7 @@ SEND: (POST request)
 	"tancode_id"=...
 	"tancode_value"=...
 RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
+	{"status": "true" (string) [or "false"],
 	 "message": null [or "some_message" in case the status is "false"]}
 
 * Make transaction through uploading a file
@@ -76,113 +29,22 @@ RECEIVE: will tell you later
 
 EMPLOYEE API
 
-
-* Registrate
-SEND: (POST request)
-	"action"="reg_emp"
-	"email"=...
-	"pass"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Login
-SEND: (POST request)
-	"action"="login_emp"
-	"email"=...
-	"pass"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Logout
-SEND: (POST request)
-	"action"="logout_emp"
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Get existing clients
-SEND: (POST request)
-	"action"="get_clients"
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"],
-	 "clients": [email1 (string), email2, ...]
-
 * Get account details of some client
 SEND: (POST request)
 	"action"="get_account_emp"
 	"email"=...
 RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
+	{"status": "true" (string) [or "false"],
 	 "message": null [or "some_message" in case the status is "false"],
-	 "account_details": will tell you later what you receive}
+	 "balance": balance (string)}
 
 * Get transaction history of some client
 SEND: (POST request)
 	"action"="get_trans_emp"
 	"email"=...
 RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
+	{"status": "true" (string) [or "false"],
 	 "message": null [or "some_message" in case the status is "false"],
 	 "trans": [trans_id1 (int), email_dest1 (string), amount1 (int), date1 (string), is_approved1 (boolean)],
 		   trans_id2, ...], ...]
-
-* Get transaction history of some client as pdf
-SEND: (POST request)
-	"action"="get_trans_emp_pdf"
-	"email"=...
-RECEIVE: will tell you later what you receive
-
-* Get pending client transactions (bigger than 10.000)
-SEND: (POST request)
-	"action"="get_trans"
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"],
-	 "trans": [[trans_id1 (int), email_src1 (string), email_dest1 (string), amount1 (int), date1 (string)],
-		   [trans_id2, ...], ...]
-
-* Approve pending client transaction (bigger than 10.000)
-SEND: (POST request)
-	"action"="approve_trans"
-	"trans_id"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Reject pending client transaction (bigger than 10.000)
-SEND: (POST request)
-	"action"="reject_trans"
-	"trans_id"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Get pending registrations for new users (clients/employees)
-SEND: (POST request)
-	"action"="get_new_users"
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"],
-	 "new_users": [[email1 (string), "client" if client or
-					 "employee" if employee],
-		       [email2, ...], ...]
-
-* Approve pending registration for new user (client/employee)
-SEND: (POST request)
-	"action"="approve_user"
-	"email"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
-
-* Reject pending registration for new user (client/employee)
-SEND: (POST request)
-	"action"="reject_user"
-	"email"=...
-RECEIVE: (JSON object)
-	{"status": true (bool) [or false],
-	 "message": null [or "some_message" in case the status is "false"]}
 

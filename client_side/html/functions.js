@@ -2,63 +2,37 @@
 var requestUrl = "serve_requests.php";
 //CLIENT
 
-function testUrl()
-{
-//alert("1");
-//var win= window.open("employeeLogin.html", "_self");
-window.event.returnValue = false;
-setTimeout(function(){window.location.assign("content.html");return false;},500);
-//win.focus();
-//alert("2");
-//return false;
-}
+/*$(document).ready(function(){
+	$("#loginClient").click(function(event){
+      event.preventDefault();
+	  window.location = "content.html";
+    });
+});**/
 
-function loginClient()
-{
-	//window.open("employeeLogin.html");
-    $(function(){    
-        var email = document.getElementById('Lemail').value;
+$(document).ready(function(){
+	$("#loginClient").click(function(event){
+		event.preventDefault();
+		var email = document.getElementById('Lemail').value;
         var pwd = document.getElementById('Lpwd').value;
-        
         var data = "action=login_client&email="+email+"&pass="+pwd;
         $.post(requestUrl, data, success, "json");
-	alert("Req sent");
         function success(resp)
         {
-		alert(resp.status);
             if (resp.status=="true")//TODO
             {
-                //setCookie("user",resp.cookie,10);
-                window.open("clientInitial.html", "_self");
-		return false;
-            } else if (resp.status=="false") {
+                setCookie("client", email, 120);
+				window.open("clientInitial.html", "_self");
+            } else {
 		alert(resp.message);
 	    }
         }
-		
     });
-}
+});
 
-function logoutClient()
-{
-    $(function(){
-        var data = "action=logout_client";
-        $.post(requestUrl, data, success, "json");
-        
-        function success (resp)
-        {
-            //setCookie("user","",10);
-            window.open("index.html", "_self");
-        }
-    });
-}
-
-
-function registerClient()
-{
-	
-    $(function(){  
-        var email = document.getElementById("Remail").value;
+$(document).ready(function(){
+	$("#registerClient").click(function(event){
+		event.preventDefault();
+		var email = document.getElementById("Remail").value;
         var pwd = document.getElementById("Rpwd").value;
         var pwdRep = document.getElementById("RpwdRep").value;
         
@@ -87,9 +61,23 @@ function registerClient()
         {
             if (resp.status=="true")//TODO
             {
-                alert("Thank You! We send the transaction codes on your email address and then you can use our service");
-				window.open("index.html");
+                alert("Thank you for registering! We will send your transaction codes to your email once your registration is approved.");
+				window.open("index.html", "_self");
             }
+        }
+    });
+});
+
+function logoutClient()
+{
+    $(function(){
+        var data = "action=logout_client";
+        $.post(requestUrl, data, success, "json");
+        
+        function success (resp)
+        {
+            setCookie("client", "client", 120);
+            window.open("index.html", "_self");
         }
     });
 }
@@ -124,16 +112,49 @@ function getHistoryClient()
                 $.each(resp.trans, function(index, value){
                     var row = $("<tr />");
                     $("#tablesTrans").append(row);
-                    $.each(value, function(index, val){
+					row.append($("<td>" + value[0] + "</td>"));
+					row.append($("<td>" + value[1] + "</td>"));
+					row.append($("<td>" + value[2] + "</td>"));
+					row.append($("<td>" + value[3] + "</td>"));
+					if (value[4]=="1")
+					{
+						row.append($("<td><img src='images/approved.gif' width='65' height='20' alt='' /></td>"));
+					}
+					else
+					{
+						row.append($("<td><img src='images/waiting.gif' width='65' height='20' alt='' /></td>"));
+					}
+                    /*$.each(value, function(index, val){
                         row.append($("<td>" + val + "</td>"));
-                    });
+                    });*/
                 });
             }
         }
     });
 }   
 
-function newTransactionClient()
+$(document).ready(function(){
+	$("#newTransactionClient").click(function(event){
+      event.preventDefault();
+	  var dest = document.getElementById('Demail').value;
+        var amount = document.getElementById('amount').value;
+		var tancode_id = document.getElementById('codeId').value;
+        var tancode_value = document.getElementById('code').value;
+        var data = "action=set_trans_form&email_dest="+dest+"&amount="+amount+"&tancode_id="+tancode_id+"&tancode_value="+tancode_value;
+        $.post(requestUrl, data, success, "json");
+        
+        function success (resp)
+        {
+            if (resp.status=="true")
+            {
+                alert("Transaction was submitted. If the amount you transfered is bigger than 10.000 Bananas, wait for approval!");
+				window.open("clientInitial.html");
+            }
+        }
+    });
+});
+
+/*function newTransactionClient()
 {
     $(function(){ 
 	
@@ -152,31 +173,64 @@ function newTransactionClient()
             }
         }
     });
-}
+}*/
 
 function getTancode()
 {
     $(function(){ 
         var data = "action=get_tancode_id";
         $.post(requestUrl, data, success, "json");
-        
+        alert("req sent");
         function success (resp)
         {
+		        alert("got res");
             if (resp.status=="true")
             {
-                $("#codeId").val(resp.tancode_id);
-            }
+		alert(resp.tan_code_id);
+                $("#codeId").val(resp.tan_code_id);
+            } else {
+	      alert(resp.message);
+	    }
         }
     });
 }
 
-function newFileTransactionClient()
+$(document).ready(function(){
+	$("#newFileTransactionClient").click(function(event){
+      event.preventDefault();
+	  data = $("#file").val();
+ 		alert("works");
+         $.ajax({
+             type: 'POST',
+             url: requestUrl+"?action=set_trans_file&tancode_id="+document.getElementById('codeId').value,
+             data: data,
+             cache: false,
+             contentType: false,
+             processData: false
+         }).done(function(resp) {
+             if (resp.status=="true")
+            {
+                alert("Transaction was submitted. If the amount you transfered is bigger than 10.000 Bananas, wait for approval!");
+				window.open("clientInitial.html");
+            }
+			else
+			{
+				alert(resp.message);
+			}
+         }).fail(function(jqXHR,status, errorThrown) {
+             console.log(errorThrown);
+             console.log(jqXHR.responseText);
+             console.log(jqXHR.status);
+			 alert("No connection to server...sorry");
+         });
+    });
+});
+
+/*function newFileTransactionClient()
 {
-     alert("works");
  	$(function() {
          //data = new FormData($('#form')[0]);
  		data = $("#file").val();
-         console.log('Submitting');
  		alert("works");
          $.ajax({
              type: 'POST',
@@ -193,33 +247,76 @@ function newFileTransactionClient()
              console.log(jqXHR.status);
          });
  	});
-}
+}*/
 
 //EMPLOYEE
-function loginEmployee()
+$(document).ready(function(){
+	$("#loginEmployee").click(function(event){
+      event.preventDefault();
+	  var email = document.getElementById('Lemail').value;
+        var pwd = document.getElementById('Lpwd').value;
+        
+        var data = "action=login_emp&email="+email+"&pass="+pwd;
+        $.post(requestUrl, data, success, "json");
+        function success(resp)
+        {
+            if (resp.status=="true")//TODO
+            {
+                window.open("employeeInitial.html", "_self");
+            } else
+		alert(resp.message);
+        }
+    });
+});
+/*function loginEmployee()
 {
-alert("Start");
     $(function(){    
         var email = document.getElementById('Lemail').value;
         var pwd = document.getElementById('Lpwd').value;
         
         var data = "action=login_emp&email="+email+"&pass="+pwd;
         $.post(requestUrl, data, success, "json");
-	alert("Request sent");
         
         function success(resp)
         {
-		alert(resp.status);
             if (resp.status=="true")//TODO
             {
                 setCookie("emp",resp.cookie,10);
-                window.open("employeeInitial.html", "_self");
+                window.open("employeeInitial.html");
             }
         }
     });
-}
+}*/
+$(document).ready(function(){
+	$("#registerEmployee").click(function(event){
+      event.preventDefault();
+	  var email = document.getElementById('Remail').value;
+        var pwd = document.getElementById('Rpwd').value;
+        var pwdRep = document.getElementById('RpwdRep').value;
+        
+        if (pwd==pwdRep)
+        {
+            var data = "action=reg_emp&email="+email+"&pass="+pwd;
+            $.post(requestUrl, data, success, "json");
+        }
+		else
+		{
+			alert ("Password confirmation is wrong!");
+			return;
+		}
+        
+        function success(resp)
+        {
+            if (resp.status=="true")//TODO
+            {
+               alert("Thank you! We send a confirmation to your email address");
+			   window.open("index.html", "_self");
+            }
+        }
+    });
+});
 
-function registerEmployee()
+/*function registerEmployee()
 {
     $(function(){  
         var email = document.getElementById('Remail').value;
@@ -246,7 +343,7 @@ function registerEmployee()
             }
         }
     });
-}
+}*/
 
 function logoutEmployee()
 {
@@ -256,8 +353,7 @@ function logoutEmployee()
         
         function success (resp)
         {
-            setCookie("emp","",10);
-            window.open("index.html");
+            window.open("index.html", "_self");
         }
     });
 }
@@ -266,7 +362,7 @@ function newTransactionsEmployee()
 {
 	$(function(){  
         
-        var data = "action=get_trans_emp";
+        var data = "action=get_trans";
         $.post(requestUrl, data, success, "json");
         
         function success(resp)
@@ -275,30 +371,160 @@ function newTransactionsEmployee()
             {
                 
                 $.each(resp.trans, function(index, value){
-                    var row = $("<tr id="+"'"+index+"'"+"/>");
+                    var row = $("<tr />");
                     $("#tablesTrans").append(row);
-                    $.each(value, function(index, val){
-                        row.append($("<td>" + val + "</td>"));
-                    });
-					row.append($("<td><input type='image' name='imageField' onClick='approveTransEmployee()' src='images/ButtonLogout.gif' /><input type='image' name='imageField' onClick='rejectTransEmployee()' src='images/ButtonLogout.gif' /></td>"));
+					row.append($("<td>" + value[0] + "</td>"));
+					row.append($("<td>" + value[1] + "</td>"));
+					row.append($("<td>" + value[2] + "</td>"));
+					row.append($("<td>" + value[3] + "</td>"));
+					row.append($("<td>" + value[4] + "</td>"));
+					row.append($("<td><input type='image' id='newTransYes"+(index+1)+"' onClick='approveTrans(this.id)' src='images/yes.gif' width='25' height='25' alt='' style='padding-right:10px;'/><input type='image' id='newTransNo"+(index+1)+"' onClick='rejectTrans(this.id)' src='images/no.gif' width='25' height='25' alt='' /></td>"));
                 });
-            }
+            } else {
+		alert(resp.message);
+	    }
+		
         }
     });
 }
 
-function approveTransEmployee()
+function approveTrans(id)
 {
 	$(function(){  
         
-        var data = "{action:approve_trans}";
+        
+		var table = document.getElementById("tablesTrans");
+		var rowId = id.slice(-1);
+		var row = table.rows[rowId];
+		var text = row.cells[0].innerHTML;
+		var data = "action=approve_trans&trans_id="+text;
+	alert(text);
         $.post(requestUrl, data, success, "json");
         
         function success(resp)
         {
             if (resp.status=="true")
             {
-				
+				alert("The transaction N "+text+" is approved.");
+				window.open("employeeInitial.html", "_self");
+            }
+			else{alert(resp.message);}
+        }
+    });
+}
+function rejectTrans(id)
+{
+	$(function(){  
+        
+        
+		var table = document.getElementById("tablesTrans");
+		var rowId = id.slice(-1);
+		var row = table.rows[rowId];
+		var text = row.cells[0].innerHTML;
+		var data = "action=reject_trans&trans_id="+text;
+        $.post(requestUrl, data, success, "json");
+        
+        function success(resp)
+        {
+            if (resp.status=="true")
+            {
+				alert("The transaction N "+text+" is rejected.");
+				window.open("employeeInitial.html", "_self");
+            }
+			else{alert(resp.message);}
+        }
+    });
+}
+
+function newRegistrationsEmployee()
+{
+    $(function(){  
+        var data = "action=get_new_users";
+        $.post(requestUrl, data, success, "json");
+        
+        function success(resp)
+        {
+            if (resp.status=="true")
+            {
+                
+                $.each(resp.new_users, function(index, value){
+                    var row = $("<tr/>");
+                    $("#tablesReg").append(row);
+					row.append($("<td>" + value[0] + "</td>"));
+					row.append($("<td>" + value[1] + "</td>"));
+					row.append($("<td><input type='image' id='newRegYes"+(index+1)+"' onClick='approveReg(this.id)' src='images/yes.gif' width='25' height='25' alt='' style='padding-right:10px;'/><input type='image' id='newRegNo"+(index+1)+"' onClick='rejectReg(this.id)' src='images/no.gif' width='25' height='25' alt='' /></td>"));
+                });
+            } else {
+		alert(resp.message);
+	    }
+        }
+    });
+}
+
+function approveReg(id)
+{
+	$(function(){  
+        
+        
+		var table = document.getElementById("tablesReg");
+		var rowId = id.slice(-1);
+		var row = table.rows[rowId];
+		var text = row.cells[0].innerHTML;
+		var data = "action=approve_user&email="+text;
+        $.post(requestUrl, data, success, "json");
+        
+        function success(resp)
+        {
+            if (resp.status=="true")
+            {
+				alert("The user "+text+" is added to database.");
+				window.open("employeeInitial.html", "_self");
+            }
+			else{alert(resp.message);}
+        }
+    });
+}
+function rejectReg(id)
+{
+	$(function(){  
+        
+        
+		var table = document.getElementById("tablesReg");
+		var rowId = id.slice(-1);
+		var row = table.rows[rowId];
+		var text = row.cells[0].innerHTML;
+		var data = "action=reject_user&email="+text;
+        $.post(requestUrl, data, success, "json");
+        
+        function success(resp)
+        {
+            if (resp.status=="true")
+            {
+				alert("The user "+text+" is removed from database.");
+				window.open("employeeInitial.html", "_self");
+            }
+			else{alert(resp.message);}
+        }
+    });
+}
+
+function allUsers()
+{
+	$(function(){  
+        var data = "action=get_clients";
+        $.post(requestUrl, data, success, "json");
+        
+        function success(resp)
+        {
+            if (resp.status=="true")
+            {
+                
+                $.each(resp.clients, function(index, value){
+                    var row = $("<tr/>");
+                    $("#tablesClients").append(row);
+					row.append($("<td>" + value + "</td>"));
+					row.append($("<td><input type='image' id='userDetails"+index+"' onClick='userDetails(this.id)' src='images/ButtonDetails.gif'/></td>"));
+                });
             }
         }
     });
@@ -341,6 +567,7 @@ function getCookie(c_name) {
             return unescape(y);
         }
     }
+	return false;
 }
 
 function checkCookie() {

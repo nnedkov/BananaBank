@@ -18,29 +18,29 @@ $action = $_POST['action'];
 
 switch ($action) {
 	// CLIENT API
-	case 'reg_client':	return reg_client(); // done + tested
-	case 'login_client':	return login_client(); // done + tested
-	case 'logout_client':	return logout_client(); // done + tested
+	case 'reg_client':	return reg_client(); // done + tested    WORKS
+	case 'login_client':	return login_client(); // done + tested	   WORKS
+	case 'logout_client':	return logout_client(); // done + tested    WORKS
 	case 'get_account_client':	return get_account_client(); // Elias
-	case 'get_trans_client':	return get_trans_client(); // done + tested
-	case 'get_trans_client_pdf':	return get_trans_client_pdf(); // (how to download the actual file)
-	case 'get_tancode_id':		return get_tancode_id(); // Elias
+	case 'get_trans_client':	return get_trans_client(); // done + tested WORKS
+	case 'get_trans_client_pdf':	return get_trans_client_pdf(); // (how to download the actual file)  NOT DONE
+	case 'get_tancode_id':		return get_tancode_id(); // Elias  WORKS
 	case 'set_trans_form':	return set_trans_form(); // Elias
 	case 'set_trans_file':	return set_trans_file(); // Elias
 	// EMPLOYEE API
-	case 'reg_emp': return reg_emp(); // done + tested
-	case 'login_emp':	return login_emp(); // done + tested
-	case 'logout_emp':	return logout_emp(); // done + tested
-	case 'get_clients':	return get_clients(); // Elias
+	case 'reg_emp': return reg_emp(); // done + tested   WORKS
+	case 'login_emp':	return login_emp(); // done + tested   WORKS
+	case 'logout_emp':	return logout_emp(); // done + tested WORKS
+	case 'get_clients':	return get_clients(); // Elias   WORKS
 	case 'get_account_emp':	return get_account_emp(); // Elias
 	case 'get_trans_emp':	return get_trans_emp(); // done + tested
-	case 'get_trans_emp_pdf':	return get_trans_emp_pdf(); // (how to download the actual file)
-	case 'get_trans':	return get_trans(); // done + tested
-	case 'approve_trans':	return approve_trans(); // done + tested (transfer actual money)
+	case 'get_trans_emp_pdf':	return get_trans_emp_pdf(); // (how to download the actual file)   NOT DONE
+	case 'get_trans':	return get_trans(); // done + tested  WORKS
+	case 'approve_trans':	return approve_trans(); // done + tested WORKS
 	case 'reject_trans':	return reject_trans(); // done + tested (send email to client)
-	case 'get_new_users':	return get_new_users(); // done + tested
-	case 'approve_user':	return approve_user(); // done + tested (send trans codes)
-	case 'reject_user':	return reject_user(); // done + tested (send email to user)
+	case 'get_new_users':	return get_new_users(); // done + tested  WORKS
+	case 'approve_user':	return approve_user(); // done + tested (send trans codes)  WORKS
+	case 'reject_user':	return reject_user(); // done + tested (send email to user)  WORKS
 	default:		return error('Unknown action specified');
 }
 
@@ -192,7 +192,44 @@ function logout_client() {
 }
 
 function get_account_client() {
-	// TODO: get user email from session
+	
+	print_debug_message('Checking if parameters were set during login 			in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
+
+	if ($_SESSION['is_employee'] == 'true')
+		return error('Invalid operation for employee');
+
+	$email = $_SESSION['email'];
+	
+	try {
+		$con = get_dbconn();
+
+		print_debug_message('Obtaining balance of user...');
+		$email = mysql_real_escape_string($email);
+		$query = 'select balance from BALANCE
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('email is not registered');
+		$row = mysqli_fetch_array($result);			
+
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return error('Something went wrong. Please try again');
+	}
+
+	$res['status'] = "true";
+	$res['message'] = null;
+	$res['email'] = $email;
+	$res['balance'] = $row['balance'];
+
+	echo json_encode($res);
 }
 
 function get_trans_client() {
@@ -336,19 +373,357 @@ function get_trans_client_pdf() {
 }
 
 function get_tancode_id() {
-	// TODO: get user email from session
+	print_debug_message('Checking if parameters were set during login in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
+
+	if ($_SESSION['is_employee'] == 'true')
+		return error('Invalid operation for employee');
+
+	$email = $_SESSION['email'];
+	
+	try {
+		$con = get_dbconn();
+
+		print_debug_message('Obtaining free tan_code_id of user...');
+		$email = mysql_real_escape_string($email);
+		$query = 'select trans_code_id from TRANSACTION_CODES where email="' . $email . '" and
+			  Is_used=0';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('No free tancodes available!');
+		$number = rand(0, $num_rows-1);
+		if(!mysqli_data_seek($result,$number))
+			return error('Something went wrong. Please try again'); 
+		$row = mysqli_fetch_array($result);			
+
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return error('Something went wrong. Please try again');
+	}
+
+	$_SESSION['tan_code_id'] = $row['trans_code_id'];
+	session_write_close();
+
+	$res['status'] = "true";
+	$res['message'] = null;
+	$res['tan_code_id'] = $row['trans_code_id'];
+
+	echo json_encode($res);
+}
+
+function transfer_money($src,$dst,$amount,$approval){
+	$email_src = test_input($src);
+	$email_dest = test_input($dst);
+	$amount= test_input($amount);
+	
+	print_debug_message('Checking if source email format is valid...');
+     	if (!filter_var($email_src, FILTER_VALIDATE_EMAIL))
+		return error('Invalid email format');
+	print_debug_message('Checking if destination email format is valid...');
+     	if (!filter_var($email_dest, FILTER_VALIDATE_EMAIL))
+		return error('Invalid email format');
+
+	try {
+		$con = get_dbconn();
+
+		print_debug_message('preparing to execute transaction...');
+		$email_src = mysql_real_escape_string($email_src);
+		$email_dest = mysql_real_escape_string($email_dest);
+		$amount = mysql_real_escape_string($amount);
+		
+		$query = 'select * from USERS
+			 where email="' . $email_dest . '"
+			 and is_approved=1';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('Destination is not registered or approved');
+		
+		$query = 'select * from USERS
+			 where email="' . $email_src . '"
+			 and is_approved=1';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('Source is not registered or approved');
+
+
+		$query = 'select balance from BALANCE
+			  where email="' . $email_src . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('Somthing went wrong!');
+		
+		$row = mysqli_fetch_array($result);
+
+		$balance = $row['balance'];
+		if($balance < $amount)
+			return error('Your current balanace does not allow you to do this transaction!');
+		
+		print_debug_message('Executing Transaction...');
+		if($amount <= 10000 || $approval == 1){
+			$is_approved = 1;
+	
+			print_debug_message('Debiting ' .$amount. ' from Source...');		
+			$query = 'update BALANCE set balance= balance - ' .$amount. '
+				  where email="' . $email_src . '"';
+			$result = mysqli_query($con, $query);
+
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0)
+				return error('Whoops, Something went wrong. Please try again');
+		
+			print_debug_message('Crediting ' .$amount. ' to Destination...');
+		
+			$query = 'update BALANCE set balance= balance + ' .$amount. '
+				  where email="' . $email_dest . '"';
+			$result = mysqli_query($con, $query);
+			
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0){
+				$query = 'update BALANCE set balance=balance + ' .$amount. '
+				  where email="' . $email_src . '"';
+				$result = mysqli_query($con, $query);	
+			return error('Whoops, Something went wrong. Please try again');
+			}
+		}else{
+			$is_approved = 0;
+		}	print_debug_message('Transaction needs approval of Employee...');				
+
+		$query = 'insert into TRANSACTIONS (email_src, email_dest,
+			amount, is_approved)
+			values ("' . $email_src . '", "' . $email_dest . '", "' . $amount . '",
+			 "' . $is_approved . '")';
+
+		$result = mysqli_query($con, $query);
+		$num_rows = mysqli_affected_rows($con);
+		if ($num_rows == 0){
+			if($is_approved == 1){
+				$query = 'update BALANCE set balance=balance + ' .$amount. '
+				  where email="' . $email_src . '"';
+				$result = mysqli_query($con, $query);	
+				$query = 'update BALANCE set balance=balance - ' .$amount. '
+				  where email="' . $email_dest . '"';
+				$result = mysqli_query($con, $query);
+			}
+			return error('Whoops, Something went wrong. Please try again');
+		}
+
+		close_dbconn($con);
+		return true;
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return error('Something went wrong. Please try again');
+	}
 }
 
 function set_trans_form() {
-// TODO: get user email from session
-// KEEP IN MIND: * a TAN code must only work one-time
-// 		 * entering a used TAN code for another transaction must be encountered with an error message
+	print_debug_message('Checking if parameters were set during login 			in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
+
+	if ($_SESSION['is_employee'] == 'true')
+		return error('Invalid operation for employee');
+
+	$email_src = $_SESSION['email'];
+	
+	if (empty($_POST['email_dest']))
+		return error('Destination email not specified');
+	if (empty($_POST['amount']))
+		return error('amount not specified');
+	if (empty($_POST['tancode_id']))
+		return error('TAN code ID not specified');
+	if (empty($_POST['tancode_value']))
+		return error('TAN not specified');
+
+	print_debug_message('Sanitizing input...');
+	$tancode_id = test_input($_POST['tancode_id']);
+	$tancode_value = test_input($_POST['tancode_value']);
+	
+	try {
+		$con = get_dbconn();
+
+		$tancode_id = mysql_real_escape_string($tancode_id);
+		$tancode_value = mysql_real_escape_string($tancode_value);		
+		
+		$query = 'select Is_used from TRANSACTION_CODES where 
+			 email= "' . $email_src . '" and
+			 trans_code_id= "' . $tancode_id . '" and 
+			 trans_code = "' . $tancode_value . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('You entered an invalid Tancode!');
+		$row = mysqli_fetch_array($result);					
+		if($row['Is_used'] != 0)
+			return error('You entered an already used tancode!');		
+		
+		$status = transfer_money($email_src,$_POST['email_dest'],$_POST['amount'],0);
+		if($status == true){
+			
+			$query = 'update TRANSACTION_CODES set Is_used =1
+				where email = "'. $email_src . '" and trans_code_id = "'. $tancode_id .'"';
+			
+			$result = mysqli_query($con, $query);
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0){
+				print_debug_message("Code wasn't set to used!");  //TODO:make sure it does!
+			}
+		} else
+			return;
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return error('Something went wrong. Please try again');
+	}
+
+	$res['status'] = "true";
+	$res['message'] = null;
+
+	echo json_encode($res);
 }
 
 function set_trans_file() {
-// TODO: get user email from session
-// KEEP IN MIND: * a TAN code must only work one-time
-// 		 * entering a used TAN code for another transaction must be encountered with an error message
+	print_debug_message('Checking if parameters were set during login in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
+
+	if ($_SESSION['is_employee'] == 'true')
+		return error('Invalid operation for employee');
+
+	if (empty($_SESSION['tan_code_id']))
+		return error('No tancode ID sored in the session');
+
+	$email_src = $_SESSION['email'];
+	$tancode_id = $_SESSION['tan_code_id'];
+	
+	//$filename = upload_file();    <<---GET THIS TO WORK!
+	print_debug_message("parsing file " .$filename);
+	parse_file("trans.txt",$email_src,$tancode_id);
+}
+
+function parse_file($filename,$email_src,$tancode_id){
+
+        $handle = popen("./main /var/www/uploaded_transactions/" .$filename, "r");
+				
+	$output = ''; 
+	$params = array();
+	while($s = fgets($handle)) {
+		if(ord($s) == 32)
+			break;
+		$words = str_word_count($s,1,'1234567890!#$%&*+-/@=?^_`{|}~.');		
+		array_push($params, $words);				
+	}	
+	end($params); 
+	$key = key($params);
+	$value = current($params);
+	if(count($value) != 1)
+		return error('Uploaded file does not comply with rules! Last line should have only tan code');
+	if(strlen($value[0]) != 15)
+		return error('Tan code entered is not 15 characters!');
+	
+	$tancode_value = test_input($value[0]);
+	
+	try {
+		$con = get_dbconn();
+
+		$tancode_id = mysql_real_escape_string($tancode_id);
+		$tancode_value = mysql_real_escape_string($tancode_value);		
+		
+		$query = 'select Is_used from TRANSACTION_CODES where 
+			 email= "' . $email_src . '" and
+			 trans_code_id= "' . $tancode_id . '" and 
+			 trans_code = "' . $tancode_value . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('You entered an invalid Tancode!');
+		$row = mysqli_fetch_array($result);					
+		if($row['Is_used'] != 0)
+			return error('You entered an already used tancode!');		
+		
+		for($i = 0; $i < count($params)-1;$i++){
+			//			echo "elias".$params[$i][0]."elias";
+			$status = transfer_money($email_src,$params[$i][0],$params[$i][1],0);			
+		}
+
+
+		if($status == true){
+			
+			$query = 'update TRANSACTION_CODES set Is_used =1
+				where email = "'. $email_src . '" and trans_code_id = "'. $tancode_id .'"';
+			
+			$result = mysqli_query($con, $query);
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0){
+				print_debug_message("Code wasn't set to used!");  //TODO:make sure it does!
+			}
+		} else
+			return;
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return error('Something went wrong. Please try again');
+	}
+
+	$res['status'] = "true";
+	$res['message'] = null;
+
+	echo json_encode($res);
+
+}
+
+function upload_file(){
+
+	$target_dir = "/var/wwww/uploaded_transactions/";
+	$target_dir = $target_dir . basename( $_FILES["uploadFile"]["name"]);
+	$upload_ready=1;
+
+	// Check if file already exists
+	if (file_exists($target_dir . $_FILES["uploadFile"]["name"])) {
+	    echo "Sorry, file already exists.";
+	    $upload_ready = 0;
+	}
+	
+	// Check file size
+	if ($uploadFile_size > 1000) {
+	    echo "Sorry, your file is too large.";
+	    $upload_ready = 0;
+	}
+	
+	// Only GIF files allowed 
+	if (!($uploadFile_type == "text/plain")) {
+	    echo "Sorry, only text files are allowed.";
+	    $upload_ready = 0;
+	}
+	
+	if ($upload_ready == 0) {
+	    echo "Sorry, your file was not uploaded.";
+	} else { 
+	    if (move_uploaded_file($_FILES["uploadFile"]["tmp_name"], $target_dir)) {
+	        echo "The file ". basename( $_FILES["uploadFile"]["name"]). " has been uploaded.";
+	    } else {
+	        echo "Whoops something went wrong while trying to upload the file!";
+	    }
+	}
+	return "/var/wwww/uploaded_transactions/" . basename( $_FILES["uploadFile"]["name"]);
 }
 
 function reg_emp() {
@@ -490,9 +865,89 @@ function logout_emp() {
 	echo json_encode($res);
 }
 
-function get_clients() {}
+function get_clients() {
+	print_debug_message('Checking if parameters were set during login in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
 
-function get_account_emp() {}
+	if ($_SESSION['is_employee'] == 'false')
+		return error('Invalid operation for client');
+
+	$email = $_SESSION['email'];
+
+	try {
+		$con = get_dbconn();
+
+		print_debug_message('Obtaining List of all clients...');
+		$query = 'select email from USERS
+			  where is_employee = 0';
+		$result = mysqli_query($con, $query);
+
+		$clients = array();
+		while ($rec = mysqli_fetch_array($result)) {
+			$client = $rec['email'];
+			array_push($clients, $client);
+		}
+
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return error('Something went wrong. Please try again');
+	}
+
+	$res['status'] = "true";
+	$res['message'] = null;
+	$res['clients'] = $clients;
+
+	echo json_encode($res);
+
+}
+
+function get_account_emp() {
+	print_debug_message('Checking if parameters were set during login in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
+
+	if ($_SESSION['is_employee'] == 'false')
+		return error('Invalid operation for client');
+
+	print_debug_message('Sanitizing input...');
+	$email = test_input($_POST['email']);
+
+	print_debug_message('Checking if email format is valid...');
+     	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
+		return error('Invalid email format');
+
+	try {
+		$con = get_dbconn();
+
+		print_debug_message('Obtaining balance of user...');
+		$email = mysql_real_escape_string($email);
+		$query = 'select balance from BALANCE
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return error('email is not registered');
+		$row = mysqli_fetch_array($result);			
+
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return error('Something went wrong. Please try again');
+	}
+
+	$res['status'] = "true";
+	$res['message'] = null;
+	$res['balance'] = $row['balance'];
+
+	echo json_encode($res);
+}
 
 function get_trans_emp() {
 	print_debug_message('Checking if parameters were set during login in the session...');
@@ -607,16 +1062,27 @@ function approve_trans() {
 	try {
 		$con = get_dbconn();
 
-		// TODO: check if there is enough money, if yes perform the actual money transfer
-
 		$trans_id = mysql_real_escape_string($trans_id);
-		$query = 'update TRANSACTIONS set is_approved=1
+		
+		$query = 'select email_src,email_dest,amount from TRANSACTIONS
 			  where trans_id="' . $trans_id . '"';
 		$result = mysqli_query($con, $query);
-
-		$num_rows = mysqli_affected_rows($con);
+		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
 			return error('Non existing transaction with the specified id');
+		$row = mysqli_fetch_array($result);
+		
+		$status = transfer_money($row['email_src'],$row['email_dest'],$row['amount'],1);
+
+		if($status == true) {
+			$query = 'update TRANSACTIONS set is_approved=1
+				  where trans_id="' . $trans_id . '"';
+			$result = mysqli_query($con, $query);
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0)
+				return error('Non existing transaction with the specified id');
+		} else
+			return;
 
 		close_dbconn($con);
 
@@ -625,7 +1091,7 @@ function approve_trans() {
 		return error('Something went wrong. Please try again');
 	}
 
-	$res['status'] = 'true';
+	$res['status'] = "true";
 	$res['message'] = null;
 
 	echo json_encode($res);
@@ -869,3 +1335,4 @@ function get_dbconn() {
 }
 
 ?>
+
