@@ -1,6 +1,7 @@
 <?php
 
 require_once 'aux_func.php';
+require_once '../pdf/mpdf.php';
 require_once 'db.php';
 
 
@@ -172,6 +173,88 @@ function get_tancode_id() {
 	$res = array('status' => 'true',
 		     'message' => null,
 		     'tan_code_id' => $res_arr['tancode_id']);
+
+	echo json_encode($res);
+}
+
+function set_trans_form() {
+
+	print_debug_message('Checking if parameters were set during login in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
+
+	if ($_SESSION['is_employee'] == 'true')
+		return error('Invalid operation for employee');
+
+	if (empty($_SESSION['tan_code_id']))
+		return error('No tancode ID stored in the session');
+
+	$email_src = $_SESSION['email'];
+	$tancode_id = $_SESSION['tan_code_id'];
+
+	print_debug_message('Checking if parameters are set...');
+	if (empty($_POST['email_dest']))
+		return error('Destination email not specified');
+	if (empty($_POST['amount']))
+		return error('Amount not specified');
+	if (empty($_POST['tancode_value']))
+		return error('TAN code value not specified');
+
+	print_debug_message('Sanitizing input...');
+	$email_dest = sanitize_input($_POST['email_dest']);
+	$amount = sanitize_input($_POST['amount']);
+	$tancode_value = sanitize_input($_POST['tancode_value']);
+
+	if (strlen($tancode_value) != 15)
+		return error('Tancode length should be 15!');
+
+	$res_arr = set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tancode_value);
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
+
+	$res = array('status' => 'true', 'message' => null);
+
+	echo json_encode($res);
+}
+
+function set_trans_file() {
+
+	print_debug_message('Checking if parameters were set during login in the session...');
+	session_start();
+	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']))
+		return error('Invalid session');
+
+	if ($_SESSION['is_employee'] == 'true')
+		return error('Invalid operation for employee');
+
+	if (empty($_SESSION['tan_code_id']))
+		return error('No tancode ID stored in the session');
+
+	$email_src = $_SESSION['email'];
+	$tancode_id = $_SESSION['tan_code_id'];
+
+	$res_arr = upload_file();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
+
+	$params = parse_file($filename);
+	end($params);
+	$value = current($params);
+
+	if (count($value) != 1)
+		return error('Uploaded file does not comply with rules! Last line should have only tan code');
+
+	if (strlen($value[0]) != 15)
+		return error('Tan code entered is not 15 characters!');
+
+	$tancode_value = sanitize_input($value[0]);
+
+	$res_arr = set_trans_file_db($email_src, $tancode_id, $tancode_value, $params);
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
+
+	$res = array('status' => 'true', 'message' => null);
 
 	echo json_encode($res);
 }

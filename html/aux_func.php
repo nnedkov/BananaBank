@@ -153,4 +153,39 @@ function output_trans_hist_html($email, $trans_recs) {
 	return $html;
 }
 
+function upload_file() {
+
+	if ($_FILES['uploadFile']['size'] > 1000)
+	    return array('status' => false, 'err_message' => 'Sorry, your file is too large.');
+
+	if (!($_FILES['uploadFile']['type'] == 'text/plain'))
+	    return array('status' => false, 'err_message' => 'Sorry, only text files are allowed.');
+
+	$target = "/var/www/uploads/{$_FILES['uploadFile']['name']}";
+
+	if (move_uploaded_file($_FILES['uploadFile']['tmp_name'], $target))
+		print_debug_message('The file ' . basename($_FILES['uploadFile']['name']) . ' has been uploaded.');
+	else
+		return array('status' => false, 'err_message' => 'Whoops something went wrong while trying to upload the file!');
+
+	return array('status' => true, 'filename' => $target);
+}
+
+function parse_file($filename) {
+
+	print_debug_message('Parsing file ' . $res_arr['filename'] . '...');
+        $handle = popen('./main ' . $filename, 'r');
+
+	$params = array();
+	while ($s = fgets($handle)) {
+		if (ord($s) == 32) // check if empty line
+			break;
+		$words = str_word_count($s, 1, '1234567890!#$%&*+-/@=?^_`{|}~.');
+		array_push($params, $words);
+	}
+	pclose($handle);
+
+	return $params;
+}
+
 ?>

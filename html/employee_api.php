@@ -2,6 +2,7 @@
 
 require_once 'aux_func.php';
 require_once 'db.php';
+require_once '../pdf/mpdf.php';
 
 
 function reg_emp() {
