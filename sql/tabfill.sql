@@ -9,12 +9,17 @@ INSERT INTO `USERS` (`email`, `password`, `is_employee`, `is_approved`) VALUES (
 INSERT INTO `USERS` (`email`, `password`, `is_employee`, `is_approved`) VALUES ('client3@mybank.de', '12345', 0, 1);
 INSERT INTO `USERS` (`email`, `password`, `is_employee`, `is_approved`) VALUES ('client4@mybank.de', '12345', 0, 0);
 
-INSERT INTO `TRANSACTIONS` (`email_src`, `email_dest`, `amount`, `is_approved`) VALUES ('client1@mybank.de', 'client2@mybank.de', 200, 1);
-INSERT INTO `TRANSACTIONS` (`email_src`, `email_dest`, `amount`, `is_approved`) VALUES ('client1@mybank.de', 'client3@mybank.de', 400, 1);
-INSERT INTO `TRANSACTIONS` (`email_src`, `email_dest`, `amount`, `is_approved`) VALUES ('client1@mybank.de', 'client2@mybank.de', 800, 1);
-INSERT INTO `TRANSACTIONS` (`email_src`, `email_dest`, `amount`, `is_approved`) VALUES ('client1@mybank.de', 'client3@mybank.de', 300, 1);
-INSERT INTO `TRANSACTIONS` (`email_src`, `email_dest`, `amount`, `is_approved`) VALUES ('client1@mybank.de', 'client3@mybank.de', 11000, 0);
+INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
+VALUES ('client1@mybank.de', 'client2@mybank.de', 200, 'description1', 1);
+INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
+VALUES ('client1@mybank.de', 'client3@mybank.de', 400, 'description2', 1);
+INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
+VALUES ('client1@mybank.de', 'client2@mybank.de', 800, 'description3', 1);
+INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
+VALUES ('client1@mybank.de', 'client3@mybank.de', 300, 'description4', 1);
+INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
+VALUES ('client1@mybank.de', 'client3@mybank.de', 11000, 'description5', 0);
 
-INSERT INTO `BALANCE` (`email`, `balance`, `account_number`) VALUES ('client1@mybank.de', 53000, 817618274);
-INSERT INTO `BALANCE` (`email`, `balance`, `account_number`) VALUES ('client2@mybank.de', 4000, 216458122);
-INSERT INTO `BALANCE` (`email`, `balance`, `account_number`) VALUES ('client3@mybank.de', 13000, 129847127);
+INSERT INTO `BALANCE` (`email`, `balance`) VALUES ('client1@mybank.de', 53000);
+INSERT INTO `BALANCE` (`email`, `balance`) VALUES ('client2@mybank.de', 4000);
+INSERT INTO `BALANCE` (`email`, `balance`) VALUES ('client3@mybank.de', 13000);

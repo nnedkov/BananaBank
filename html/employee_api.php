@@ -90,9 +90,7 @@ function get_clients() {
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'false')
-		return error('Invalid operation for client');
-
-	$email = $_SESSION['email'];
+		return error('Unauthorized operation for client');
 
 	$res_arr = get_clients_db();
 	if ($res_arr['status'] == false)
@@ -113,7 +111,11 @@ function get_account_emp() {
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'false')
-		return error('Invalid operation for client');
+		return error('Unauthorized operation for client');
+
+	print_debug_message('Checking if email parameter is set...');
+	if (empty($_POST['email']))
+		return error('User not specified');
 
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
@@ -128,7 +130,8 @@ function get_account_emp() {
 
 	$res = array('status' => 'true',
 		     'message' => null,
-		     'balance' => $res_arr['balance']);
+		     'balance' => $res_arr['balance'],
+		     'account_number' => $res_arr['account_number']);
 
 	echo json_encode($res);
 }
@@ -314,15 +317,19 @@ function approve_user() {
 	print_debug_message('Checking if email parameter is set...');
 	if (empty($_POST['email']))
 		return error('Email not specified');
+	print_debug_message('Checking if initial balance parameter is set...');
+	if (empty($_POST['init_balance']))
+		return error('Initial balance not specified');
 
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
+	$init_balance = sanitize_input($_POST['init_balance']);
 
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
 
-	$res_arr = approve_user_db($email);
+	$res_arr = approve_user_db($email, $init_balance);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 

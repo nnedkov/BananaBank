@@ -4,7 +4,7 @@ require_once 'dbconn.php';
 require_once 'aux_func.php';
 
 
-function reg_client_db($email, $pass) {
+function reg_client_db($email, $pass, $pdf) {
 
 	try {
 		$con = get_dbconn();
@@ -21,8 +21,9 @@ function reg_client_db($email, $pass) {
 
 		print_debug_message('No registered user with same email exists. Inserting new user to db...');
 		$pass = mysql_real_escape_string($pass);
-		$query = 'insert into USERS (email, password)
-			  values ("' . $email . '", "' . $pass . '")';
+		$pdf = mysql_real_escape_string($pdf);
+		$query = 'insert into USERS (email, password, pdf)
+			  values ("' . $email . '", "' . $pass . '", "' . $pdf . '")';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
@@ -61,34 +62,17 @@ function login_client_db($email, $pass) {
 		if ($rec['is_approved'] == 0)
 			return array('status' => false, 'err_message' => 'Registration not approved yet');
 
-		close_dbconn($con);
-
-	} catch (Exception $e) {
-		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
-	}
-
-	return array('status' => true);
-}
-
-function get_account_client_db($email) {
-
-	try {
-		$con = get_dbconn();
-
-		print_debug_message('Obtaining balance of user...');
-		$email = mysql_real_escape_string($email);
-		$query = 'select balance, account_number from BALANCE
+		print_debug_message('Obtaining account number of user...');
+		$query = 'select account_number from BALANCE
 			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => "User doesn't have a balance record");
+			return array('status' => false, 'err_message' => 'Something went wrong');
 
 		$row = mysqli_fetch_array($result);
-		$balance = $row['balance'];
-		$account_number = $row['account_number'];
+		$account_num = $row['account_number'];
 
 		close_dbconn($con);
 
@@ -97,23 +81,55 @@ function get_account_client_db($email) {
 		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'balance' => $balance, 'account_number' => $account_number);
+	return array('status' => true, 'account_num' => $account_num);
 }
 
-function get_trans_client_db($email) {
+function get_account_client_db($account_num) {
+
+	try {
+		$con = get_dbconn();
+
+		print_debug_message('Obtaining account details of user...');
+		$query = 'select balance from BALANCE
+			  where account_number="' . $account_num . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return array('status' => false, 'err_message' => "User doesn't have an account");
+
+		$row = mysqli_fetch_array($result);
+		$balance = $row['balance'];
+
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+	}
+
+	return array('status' => true, 'balance' => $balance);
+}
+
+function get_trans_client_db($account_num) {
 
 	try {
 		$con = get_dbconn();
 
 		print_debug_message('Obtaining transaction records...');
-		$email = mysql_real_escape_string($email);
-		$query = 'select trans_id, email_src, email_dest, amount, date, is_approved from TRANSACTIONS
-			  where email_src="' . $email . '" order by trans_id';
+		$query = 'select trans_id, account_num_dest, amount, description, date, is_approved from TRANSACTIONS
+			  where account_num_src="' . $account_num . '"
+			  order by trans_id';
 		$result = mysqli_query($con, $query);
 
 		$trans_recs = array();
 		while ($rec = mysqli_fetch_array($result)) {
-			$trans_rec = array($rec['trans_id'], $rec['email_dest'], $rec['amount'], $rec['date'], $rec['is_approved']);
+			$trans_rec = array($rec['trans_id'],
+					   $rec['account_num_dest'],
+					   $rec['amount'],
+					   $rec['description'],
+					   $rec['date'],
+					   $rec['is_approved']);
 			array_push($trans_recs, $trans_rec);
 		}
 
@@ -127,15 +143,14 @@ function get_trans_client_db($email) {
 	return array('status' => true, 'trans_recs' => $trans_recs);
 }
 
-function get_tancode_id_db($email) {
+function get_tancode_id_db($account_num) {
 
 	try {
 		$con = get_dbconn();
 
 		print_debug_message('Obtaining free tancode id of user...');
-		$email = mysql_real_escape_string($email);
 		$query = 'select tancode_id from TRANSACTION_CODES
-			  where email="' . $email . '" and
+			  where account_number="' . $account_num . '" and
 			  is_used=0';
 		$result = mysqli_query($con, $query);
 
@@ -160,7 +175,7 @@ function get_tancode_id_db($email) {
 	return array('status' => true, 'tancode_id' => $tancode_id);
 }
 
-function set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tancode_value) {
+function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancode_id, $tancode_value, $description) {
 
 	try {
 		$con = get_dbconn();
@@ -169,7 +184,7 @@ function set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tanco
 		$tancode_id = mysql_real_escape_string($tancode_id);
 		$tancode_value = mysql_real_escape_string($tancode_value);
 		$query = 'select is_used from TRANSACTION_CODES where
-			  email= "' . $email_src . '" and
+			  account_number= "' . $account_num_src . '" and
 			  tancode_id="' . $tancode_id . '" and
 			  tancode="' . $tancode_value . '"';
 		$result = mysqli_query($con, $query);
@@ -182,12 +197,12 @@ function set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tanco
 		if ($row['is_used'] != 0)
 			return array('status' => false, 'err_message' => 'You entered an already used tancode!');
 
-		$res_arr = transfer_money($email_src, $email_dest, $amount, 0);
+		$res_arr = transfer_money($account_num_src, $account_num_dest, $amount, $description, 0);
 		if ($res_arr['status'] == false)
 			return $res_arr;
 
 		$query = 'update TRANSACTION_CODES set is_used=1
-			  where email="' . $email_src . '" and
+			  where account_number="' . $account_num_src . '" and
 			  tancode_id="' . $tancode_id . '"';
 
 		$result = mysqli_query($con, $query);
@@ -206,7 +221,7 @@ function set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tanco
 	return array('status' => true);
 }
 
-function set_trans_file_db($email_src, $tancode_id, $tancode_value, $params) {
+function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $params) {
 
 	try {
 		$con = get_dbconn();
@@ -215,7 +230,7 @@ function set_trans_file_db($email_src, $tancode_id, $tancode_value, $params) {
 		$tancode_id = mysql_real_escape_string($tancode_id);
 		$tancode_value = mysql_real_escape_string($tancode_value);
 		$query = 'select is_used from TRANSACTION_CODES where
-			  email= "' . $email_src . '" and
+			  account_number= "' . $account_num_src . '" and
 			  tancode_id= "' . $tancode_id . '" and
 			  tancode = "' . $tancode_value . '"';
 		$result = mysqli_query($con, $query);
@@ -229,13 +244,13 @@ function set_trans_file_db($email_src, $tancode_id, $tancode_value, $params) {
 			return array('status' => false, 'err_message' => 'You entered an already used tancode!');
 
 		for ($i = 0 ; $i < count($params)-1 ; $i++)
-			$res_arr = transfer_money($email_src, $params[$i][0], $params[$i][1], 0);
+			$res_arr = transfer_money($account_num_src, $params[$i][0], $params[$i][1], '', 0);
 			if ($res_arr['status'] == false)
 				return $res_arr;
 
 		$query = 'update TRANSACTION_CODES set is_used=1
-			  where email = "' . $email_src . '" and
-			  tancode_id = "' . $tancode_id .'"';
+			  where account_number="' . $account_num_src . '" and
+			  tancode_id="' . $tancode_id .'"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
@@ -252,17 +267,15 @@ function set_trans_file_db($email_src, $tancode_id, $tancode_value, $params) {
 	return array('status' => true);
 }
 
-function transfer_money($email_src, $email_dest, $amount, $approval) {
+function transfer_money($account_num_src, $account_num_dest, $amount, $description, $approval) {
 
 	try {
 		$con = get_dbconn();
 
 		print_debug_message('Checking if destination user exists...');
-		$email_dest = mysql_real_escape_string($email_dest);
-		$query = 'select * from USERS
-			  where email="' . $email_dest . '" and
-			  is_approved=1 and
-			  is_employee=0';
+		$account_num_dest = mysql_real_escape_string($account_num_dest);
+		$query = 'select * from BALANCE
+			  where account_number="' . $account_num_dest . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -270,14 +283,14 @@ function transfer_money($email_src, $email_dest, $amount, $approval) {
 			return array('status' => false, 'err_message' => 'Destination account is not registered or approved');
 
 		print_debug_message('Checking if source user has sufficient balance...');
-		$email_src = mysql_real_escape_string($email_src);
+		$account_num_src = mysql_real_escape_string($account_num_src);
 		$query = 'select balance from BALANCE
-			  where email="' . $email_src . '"';
+			  where account_number="' . $account_num_src . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => "Something went wrong. Please try again");
+			return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
 
 		$amount = mysql_real_escape_string($amount);
 		$row = mysqli_fetch_array($result);
@@ -288,18 +301,18 @@ function transfer_money($email_src, $email_dest, $amount, $approval) {
 		if ($amount <= 10000 || $approval == 1) {
 			$is_approved = 1;
 
-			print_debug_message('Debiting ' . $amount . ' from ' . $email_src . '...');
+			print_debug_message('Debiting ' . $amount . ' from ' . $account_num_src . '...');
 			$query = 'update BALANCE set balance=balance-' . $amount . '
-				  where email="' . $email_src . '"';
+				  where account_number="' . $account_num_src . '"';
 			$result = mysqli_query($con, $query);
 
 			$num_rows = mysqli_affected_rows($con);
 			if ($num_rows == 0)
 				return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
 
-			print_debug_message('Crediting ' . $amount . ' to ' . $email_dest . '...');
+			print_debug_message('Crediting ' . $amount . ' to ' . $account_num_dest . '...');
 			$query = 'update BALANCE set balance=balance+' . $amount . '
-				  where email="' . $email_dest . '"';
+				  where account_number="' . $account_num_dest . '"';
 			$result = mysqli_query($con, $query);
 
 			$num_rows = mysqli_affected_rows($con);
@@ -310,8 +323,12 @@ function transfer_money($email_src, $email_dest, $amount, $approval) {
 			$is_approved = 0;
 		}
 
-		$query = 'insert into TRANSACTIONS (email_src, email_dest, amount, is_approved)
-			  values ("' . $email_src . '", "' . $email_dest . '", "' . $amount . '", "' . $is_approved . '")';
+		$query = 'insert into TRANSACTIONS (account_num_src, account_num_dest, amount, description, is_approved)
+			  values ("' . $account_num_src . '", "'
+				     . $account_num_dest . '", "'
+				     . $amount . '", "'
+				     . $description . '", "'
+				     . $is_approved . '")';
 
 		$result = mysqli_query($con, $query);
 		$num_rows = mysqli_affected_rows($con);
@@ -428,7 +445,7 @@ function get_account_emp_db($email) {
 	try {
 		$con = get_dbconn();
 
-		print_debug_message('Obtaining balance of user...');
+		print_debug_message('Obtaining user account details...');
 		$email = mysql_real_escape_string($email);
 		$query = 'select balance, account_number from BALANCE
 			  where email="' . $email . '"';
@@ -457,16 +474,34 @@ function get_trans_emp_db($email) {
 	try {
 		$con = get_dbconn();
 
+		print_debug_message('Obtaining user account number...');
+		$email = mysql_real_escape_string($email);
+		$query = 'select account_number from BALANCE
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+
+		$row = mysqli_fetch_array($result);
+		$account_num = $row['account_number'];
+
 		print_debug_message('Obtaining transaction records...');
 		$email = mysql_real_escape_string($email);
-		$query = 'select trans_id, email_src, email_dest, amount, date, is_approved from TRANSACTIONS
-			  where email_src="' . $email . '"
+		$query = 'select trans_id, account_num_src, account_num_dest, amount, description, date, is_approved from TRANSACTIONS
+			  where account_num_src="' . $account_num . '"
 			  order by trans_id';
 		$result = mysqli_query($con, $query);
 
 		$trans_recs = array();
 		while ($rec = mysqli_fetch_array($result)) {
-			$trans_rec = array($rec['trans_id'], $rec['email_dest'], $rec['amount'], $rec['date'], $rec['is_approved']);
+			$trans_rec = array($rec['trans_id'],
+					   $rec['account_num_dest'],
+					   $rec['amount'],
+					   $rec['description'],
+					   $rec['date'],
+					   $rec['is_approved']);
 			array_push($trans_recs, $trans_rec);
 		}
 
@@ -486,7 +521,7 @@ function get_trans_db() {
 		$con = get_dbconn();
 
 		print_debug_message('Obtaining unapproved transaction records...');
-		$query = 'select trans_id, email_src, email_dest, amount, date from TRANSACTIONS
+		$query = 'select trans_id, account_num_src, account_num_dest, amount, description, date from TRANSACTIONS
 			  where is_approved=0
 			  and amount>=10000
 			  order by trans_id';
@@ -494,7 +529,12 @@ function get_trans_db() {
 
 		$trans_recs = array();
 		while ($rec = mysqli_fetch_array($result)) {
-			$trans_rec = array($rec['trans_id'], $rec['email_src'], $rec['email_dest'], $rec['amount'], $rec['date']);
+			$trans_rec = array($rec['trans_id'],
+					   $rec['account_num_src'],
+					   $rec['account_num_dest'],
+					   $rec['amount'],
+					   $rec['description'],
+					   $rec['date']);
 			array_push($trans_recs, $trans_rec);
 		}
 
@@ -599,7 +639,7 @@ function get_new_users_db() {
 	return array('status' => true, 'new_users' => $new_users);
 }
 
-function approve_user_db($email) {
+function approve_user_db($email, $init_balance) {
 
 	try {
 		$con = get_dbconn();
@@ -615,16 +655,16 @@ function approve_user_db($email) {
 		if ($num_rows == 0)
 			return array('status' => false, 'err_message' => 'Non existing user with the specified email');
 
-		$query = 'select is_employee from USERS
+		$query = 'select is_employee, pdf from USERS
 			  where email ="'. $email. '"';
-		$result = mysqli_query($con,$query);
+		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
 			return array('status' => false, 'err_message' => 'Something went wrong');
 
 		$row = mysqli_fetch_array($result);
-		if ($row['is_employee'] == 0) {
+		if ($row['is_employee'] == 0 && $row['pdf'] == 1) {
 
 			$codes = array();
 			for ($i = 0 ; $i < 100 ; $i++) {
@@ -635,7 +675,7 @@ function approve_user_db($email) {
 
 				$num_rows = mysqli_affected_rows($con);
 				if ($num_rows == 0)
-					return array('status' => false, 'err_message' => 'Whoops, something went wrong while adding tancode');
+					return array('status' => false, 'err_message' => 'Whoops, something went wrong while adding tancodes');
 
 				$query = 'select LAST_INSERT_ID()';
 				$result = mysqli_query($con, $query);
@@ -650,8 +690,10 @@ function approve_user_db($email) {
 
 			mail_tancodes($codes, $email);
 
+			print_debug_message('Setting initial balance...');
+			$init_balance = mysql_real_escape_string($init_balance);
 			$query = 'insert into BALANCE (email, balance)
-			  	  values ("' . $email . '", ' . rand(1000, 15000) . ')';
+			  	  values ("' . $email . '", ' . $init_balance . ')';
 			$result = mysqli_query($con, $query);
 
 			$num_rows = mysqli_affected_rows($con);

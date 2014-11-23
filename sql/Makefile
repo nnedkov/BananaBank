@@ -13,7 +13,7 @@ create_db:
 	mysql --user=$(DB_USER) --password=$(DB_PASS) --database=my_bank -A < ./tabcreate.sql
 
 fill_db:
-	mysql --user=$(DB_USER) --password=$(DB_PASS) --database=my_bank -A < ./my_bank.sql
+	mysql --user=$(DB_USER) --password=$(DB_PASS) --database=my_bank -A < ./tabfill.sql
 
 drop_db:
 	mysql --user=$(DB_USER) --password=$(DB_PASS) -e "DROP DATABASE my_bank;"

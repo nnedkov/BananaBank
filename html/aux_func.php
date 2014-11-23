@@ -144,7 +144,8 @@ function output_trans_hist_html($email, $trans_recs) {
 		$html = $html . '<td align="left">' . $trans_rec[1] . '</td>';
 		$html = $html . '<td align="right">' . $trans_rec[2] . '</td>';
 		$html = $html . '<td align="center">' . $trans_rec[3] . '</td>';
-		$is_approved = $trans_rec[4] == 0 ? 'not approved yet' : 'approved';
+		$html = $html . '<td align="center">' . $trans_rec[4] . '</td>';
+		$is_approved = $trans_rec[5] == 0 ? 'not approved yet' : 'approved';
 		$html = $html . '<td align="center">' . $is_approved . '</td>';
 		$html = $html . '</tr>';
 	}
