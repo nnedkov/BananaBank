@@ -101,7 +101,8 @@ function get_account_client() {
 	$res = array('status' => 'true',
 		     'message' => null,
 		     'email' => $email,
-		     'balance' => $res_arr['balance']);
+		     'balance' => $res_arr['balance'],
+		     'account_number' => $res_arr['account_number']);
 
 	echo json_encode($res);
 }

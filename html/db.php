@@ -61,8 +61,6 @@ function login_client_db($email, $pass) {
 		if ($rec['is_approved'] == 0)
 			return array('status' => false, 'err_message' => 'Registration not approved yet');
 
-		print_debug_message('Credentials were correct');
-
 		close_dbconn($con);
 
 	} catch (Exception $e) {
@@ -80,7 +78,7 @@ function get_account_client_db($email) {
 
 		print_debug_message('Obtaining balance of user...');
 		$email = mysql_real_escape_string($email);
-		$query = 'select balance from BALANCE
+		$query = 'select balance, account_number from BALANCE
 			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
@@ -90,6 +88,7 @@ function get_account_client_db($email) {
 
 		$row = mysqli_fetch_array($result);
 		$balance = $row['balance'];
+		$account_number = $row['account_number'];
 
 		close_dbconn($con);
 
@@ -98,7 +97,7 @@ function get_account_client_db($email) {
 		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'balance' => $balance);
+	return array('status' => true, 'balance' => $balance, 'account_number' => $account_number);
 }
 
 function get_trans_client_db($email) {
@@ -135,9 +134,9 @@ function get_tancode_id_db($email) {
 
 		print_debug_message('Obtaining free tancode id of user...');
 		$email = mysql_real_escape_string($email);
-		$query = 'select trans_code_id from TRANSACTION_CODES
+		$query = 'select tancode_id from TRANSACTION_CODES
 			  where email="' . $email . '" and
-			  Is_used=0';
+			  is_used=0';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -149,7 +148,7 @@ function get_tancode_id_db($email) {
 			return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
 
 		$row = mysqli_fetch_array($result);
-		$tancode_id = $row['trans_code_id'];
+		$tancode_id = $row['tancode_id'];
 
 		close_dbconn($con);
 
@@ -171,8 +170,8 @@ function set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tanco
 		$tancode_value = mysql_real_escape_string($tancode_value);
 		$query = 'select is_used from TRANSACTION_CODES where
 			  email= "' . $email_src . '" and
-			  trans_code_id="' . $tancode_id . '" and
-			  trans_code="' . $tancode_value . '"';
+			  tancode_id="' . $tancode_id . '" and
+			  tancode="' . $tancode_value . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -180,7 +179,7 @@ function set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tanco
 			return array('status' => false, 'err_message' => 'You entered an invalid tancode!');
 
 		$row = mysqli_fetch_array($result);
-		if($row['is_used'] != 0)
+		if ($row['is_used'] != 0)
 			return array('status' => false, 'err_message' => 'You entered an already used tancode!');
 
 		$res_arr = transfer_money($email_src, $email_dest, $amount, 0);
@@ -189,7 +188,7 @@ function set_trans_form_db($email_src, $email_dest, $amount, $tancode_id, $tanco
 
 		$query = 'update TRANSACTION_CODES set is_used=1
 			  where email="' . $email_src . '" and
-			  trans_code_id="' . $tancode_id . '"';
+			  tancode_id="' . $tancode_id . '"';
 
 		$result = mysqli_query($con, $query);
 
@@ -217,8 +216,8 @@ function set_trans_file_db($email_src, $tancode_id, $tancode_value, $params) {
 		$tancode_value = mysql_real_escape_string($tancode_value);
 		$query = 'select is_used from TRANSACTION_CODES where
 			  email= "' . $email_src . '" and
-			  trans_code_id= "' . $tancode_id . '" and
-			  trans_code = "' . $tancode_value . '"';
+			  tancode_id= "' . $tancode_id . '" and
+			  tancode = "' . $tancode_value . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -236,7 +235,7 @@ function set_trans_file_db($email_src, $tancode_id, $tancode_value, $params) {
 
 		$query = 'update TRANSACTION_CODES set is_used=1
 			  where email = "' . $email_src . '" and
-			  trans_code_id = "' . $tancode_id .'"';
+			  tancode_id = "' . $tancode_id .'"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
@@ -387,8 +386,6 @@ function login_emp_db($email, $pass) {
 		if ($rec['is_approved'] == 0)
 			return array('status' => false, 'err_message' => 'Registration not approved yet');
 
-		print_debug_message('Credentials were correct');
-
 		close_dbconn($con);
 
 	} catch (Exception $e) {
@@ -433,7 +430,7 @@ function get_account_emp_db($email) {
 
 		print_debug_message('Obtaining balance of user...');
 		$email = mysql_real_escape_string($email);
-		$query = 'select balance from BALANCE
+		$query = 'select balance, account_number from BALANCE
 			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
@@ -443,6 +440,7 @@ function get_account_emp_db($email) {
 
 		$row = mysqli_fetch_array($result);
 		$balance = $row['balance'];
+		$account_number = $row['account_number'];
 
 		close_dbconn($con);
 
@@ -451,7 +449,7 @@ function get_account_emp_db($email) {
 		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'balance' => $balance);
+	return array('status' => true, 'balance' => $balance, 'account_number' => $account_number);
 }
 
 function get_trans_emp_db($email) {
@@ -526,7 +524,6 @@ function approve_trans_db($trans_id) {
 			return array('status' => false, 'err_message' => 'Non existing transaction with the specified id');
 
 		$row = mysqli_fetch_array($result);
-
 		$res_arr = transfer_money($row['email_src'], $row['email_dest'], $row['amount'], 1);
 		if ($res_arr['status'] == false)
 			return $res_arr;
@@ -630,9 +627,9 @@ function approve_user_db($email) {
 		if ($row['is_employee'] == 0) {
 
 			$codes = array();
-			for($i = 0 ; $i < 100 ; $i++) {
+			for ($i = 0 ; $i < 100 ; $i++) {
 				$codes[$i]['value'] = uniqid(chr(mt_rand(97,122)).chr(mt_rand(97,122)));
-				$query = 'insert into TRANSACTION_CODES (trans_code, email)
+				$query = 'insert into TRANSACTION_CODES (tancode, email)
 				          values ("' . $codes[$i]['value'] . '", "' . $email . '")';
 				$result = mysqli_query($con, $query);
 
@@ -645,7 +642,7 @@ function approve_user_db($email) {
 
 				$num_rows = mysqli_num_rows($result);
 				if ($num_rows == 0)
-					return array('status' => false, 'err_message' => 'Wrong email or password');
+					return array('status' => false, 'err_message' => 'Something went wrong');
 
 				$row = mysqli_fetch_array($result);
 				$codes[$i]['id'] = $row[0];
