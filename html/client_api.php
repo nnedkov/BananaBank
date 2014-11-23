@@ -21,13 +21,12 @@ function reg_client() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
-
 	print_debug_message('Checking if password content is valid...');
 	if (!preg_match('/^[a-zA-Z0-9]*$/', $pass))
 		return error('Invalid password (only letters and digits are allowed)');
 	print_debug_message('Checking if way of delivering tancodes is valid...');
-	if (!preg_match('/^[01]$/', $pdf))
-		return error('Invalid parameter (only 0 or 1 is allowed)');
+	if (!preg_match('/^[1-2]$/', $pdf))
+		return error('Invalid parameter (only 1 or 2 is allowed)');
 
 	$res_arr = reg_client_db($email, $pass, $pdf);
 	if ($res_arr['status'] == false)
@@ -72,7 +71,7 @@ function logout_client() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_number']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -93,7 +92,7 @@ function get_account_client() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_number']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -119,7 +118,7 @@ function get_trans_client() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_number']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -142,7 +141,7 @@ function get_trans_client_pdf() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_number']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -164,7 +163,7 @@ function get_tancode_id() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_number']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -190,7 +189,7 @@ function set_trans_form() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_number']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -237,7 +236,7 @@ function set_trans_file() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_number']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
 	if ($_SESSION['is_employee'] == 'true')

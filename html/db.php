@@ -323,17 +323,19 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 			$is_approved = 0;
 		}
 
-		$query = 'insert into TRANSACTIONS (account_num_src, account_num_dest, amount, description, is_approved)
-			  values ("' . $account_num_src . '", "'
-				     . $account_num_dest . '", "'
-				     . $amount . '", "'
-				     . $description . '", "'
-				     . $is_approved . '")';
+		if ($approval == 0) {
+			$query = 'insert into TRANSACTIONS (account_num_src, account_num_dest, amount, description, is_approved)
+			          values ("' . $account_num_src . '", "'
+				             . $account_num_dest . '", "'
+				             . $amount . '", "'
+				             . $description . '", "'
+				             . $is_approved . '")';
 
-		$result = mysqli_query($con, $query);
-		$num_rows = mysqli_affected_rows($con);
-		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+			$result = mysqli_query($con, $query);
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0)
+				return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		}
 
 		mysqli_commit($con);
 		close_dbconn($con);
@@ -555,7 +557,7 @@ function approve_trans_db($trans_id) {
 
 		print_debug_message('Checking if transaction exists...');
 		$trans_id = mysql_real_escape_string($trans_id);
-		$query = 'select email_src, email_dest, amount from TRANSACTIONS
+		$query = 'select account_num_src, account_num_dest, amount from TRANSACTIONS
 			  where trans_id="' . $trans_id . '"';
 		$result = mysqli_query($con, $query);
 
@@ -564,7 +566,7 @@ function approve_trans_db($trans_id) {
 			return array('status' => false, 'err_message' => 'Non existing transaction with the specified id');
 
 		$row = mysqli_fetch_array($result);
-		$res_arr = transfer_money($row['email_src'], $row['email_dest'], $row['amount'], 1);
+		$res_arr = transfer_money($row['account_num_src'], $row['account_num_dest'], $row['amount'], '', 1);
 		if ($res_arr['status'] == false)
 			return $res_arr;
 
@@ -655,8 +657,9 @@ function approve_user_db($email, $init_balance) {
 		if ($num_rows == 0)
 			return array('status' => false, 'err_message' => 'Non existing user with the specified email');
 
+		print_debug_message('Obtaining info about user...');
 		$query = 'select is_employee, pdf from USERS
-			  where email ="'. $email. '"';
+			  where email="'. $email. '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
@@ -664,41 +667,60 @@ function approve_user_db($email, $init_balance) {
 			return array('status' => false, 'err_message' => 'Something went wrong');
 
 		$row = mysqli_fetch_array($result);
-		if ($row['is_employee'] == 0 && $row['pdf'] == 1) {
+		$is_employee = $row['is_employee'];
+		$pdf = $row['pdf'];
 
-			$codes = array();
-			for ($i = 0 ; $i < 100 ; $i++) {
-				$codes[$i]['value'] = uniqid(chr(mt_rand(97,122)).chr(mt_rand(97,122)));
-				$query = 'insert into TRANSACTION_CODES (tancode, email)
-				          values ("' . $codes[$i]['value'] . '", "' . $email . '")';
-				$result = mysqli_query($con, $query);
-
-				$num_rows = mysqli_affected_rows($con);
-				if ($num_rows == 0)
-					return array('status' => false, 'err_message' => 'Whoops, something went wrong while adding tancodes');
-
-				$query = 'select LAST_INSERT_ID()';
-				$result = mysqli_query($con, $query);
-
-				$num_rows = mysqli_num_rows($result);
-				if ($num_rows == 0)
-					return array('status' => false, 'err_message' => 'Something went wrong');
-
-				$row = mysqli_fetch_array($result);
-				$codes[$i]['id'] = $row[0];
-			}
-
-			mail_tancodes($codes, $email);
-
+		if ($is_employee == 0) {
+			if ($num_rows == 0)
+				return array('status' => false, 'err_message' => 'Initial balance not specified');
 			print_debug_message('Setting initial balance...');
 			$init_balance = mysql_real_escape_string($init_balance);
 			$query = 'insert into BALANCE (email, balance)
-			  	  values ("' . $email . '", ' . $init_balance . ')';
+				  values ("' . $email . '", ' . $init_balance . ')';
 			$result = mysqli_query($con, $query);
 
 			$num_rows = mysqli_affected_rows($con);
 			if ($num_rows == 0)
 				return array('status' => false, 'err_message' => "Can't add money to user!. Please try again");
+
+			print_debug_message('Obtaining account number of user...');
+			$query = 'select LAST_INSERT_ID()';
+			$result = mysqli_query($con, $query);
+
+			$num_rows = mysqli_num_rows($result);
+			if ($num_rows == 0)
+				return array('status' => false, 'err_message' => 'Something went wrong');
+
+			$row = mysqli_fetch_array($result);
+			$account_num = $row[0];
+
+			if ($pdf == 1) {
+
+				$codes = array();
+				for ($i = 0 ; $i < 100 ; $i++) {
+					print_debug_message('Storing tancodes...');
+					$codes[$i]['value'] = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));
+					$query = 'insert into TRANSACTION_CODES (tancode, account_number)
+					          values ("' . $codes[$i]['value'] . '", "' . $account_num . '")';
+					$result = mysqli_query($con, $query);
+
+					$num_rows = mysqli_affected_rows($con);
+					if ($num_rows == 0)
+						return array('status' => false, 'err_message' => 'Whoops, something went wrong while adding tancodes');
+
+					$query = 'select LAST_INSERT_ID()';
+					$result = mysqli_query($con, $query);
+
+					$num_rows = mysqli_num_rows($result);
+					if ($num_rows == 0)
+						return array('status' => false, 'err_message' => 'Something went wrong');
+
+					$row = mysqli_fetch_array($result);
+					$codes[$i]['id'] = $row[0];
+				}
+
+				mail_tancodes($codes, $email);
+			}
 		}
 
 		close_dbconn($con);

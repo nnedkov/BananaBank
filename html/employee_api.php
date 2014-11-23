@@ -319,11 +319,15 @@ function approve_user() {
 		return error('Email not specified');
 	print_debug_message('Checking if initial balance parameter is set...');
 	if (empty($_POST['init_balance']))
-		return error('Initial balance not specified');
+		$init_balance = null;
+	else
+		$init_balance = sanitize_input($_POST['init_balance']);
+		print_debug_message('Checking if initial balance is an integer...');
+		if (!preg_match('/^[0-9]*$/', $init_balance))
+			return error('Initial balance should be an integer');
 
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
-	$init_balance = sanitize_input($_POST['init_balance']);
 
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))

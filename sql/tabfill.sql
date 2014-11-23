@@ -10,15 +10,15 @@ INSERT INTO `USERS` (`email`, `password`, `is_employee`, `is_approved`) VALUES (
 INSERT INTO `USERS` (`email`, `password`, `is_employee`, `is_approved`) VALUES ('client4@mybank.de', '12345', 0, 0);
 
 INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
-VALUES ('client1@mybank.de', 'client2@mybank.de', 200, 'description1', 1);
+VALUES ('1', '2', 200, 'description1', 1);
 INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
-VALUES ('client1@mybank.de', 'client3@mybank.de', 400, 'description2', 1);
+VALUES ('1', '3', 400, 'description2', 1);
 INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
-VALUES ('client1@mybank.de', 'client2@mybank.de', 800, 'description3', 1);
+VALUES ('1', '2', 800, 'description3', 1);
 INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
-VALUES ('client1@mybank.de', 'client3@mybank.de', 300, 'description4', 1);
+VALUES ('1', '3', 300, 'description4', 1);
 INSERT INTO `TRANSACTIONS` (`account_num_src`, `account_num_dest`, `amount`, `description`, `is_approved`)
-VALUES ('client1@mybank.de', 'client3@mybank.de', 11000, 'description5', 0);
+VALUES ('1', '3', 11000, 'description5', 0);
 
 INSERT INTO `BALANCE` (`email`, `balance`) VALUES ('client1@mybank.de', 53000);
 INSERT INTO `BALANCE` (`email`, `balance`) VALUES ('client2@mybank.de', 4000);
