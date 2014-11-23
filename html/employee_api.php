@@ -94,13 +94,13 @@ function get_clients() {
 
 	$email = $_SESSION['email'];
 
-	$res_arr = get_client_db();
+	$res_arr = get_clients_db();
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
 	$res = array('status' => 'true',
 		     'message' => null,
-		     'clients' => $clients);
+		     'clients' => $res_arr['clients']);
 
 	echo json_encode($res);
 }

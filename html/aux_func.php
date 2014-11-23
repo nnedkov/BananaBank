@@ -59,7 +59,7 @@ function mail_tancodes($codes, $to) {
 		    </tr>';
 	for ($i = 0 ; $i < count($codes) ; $i++) {
 		$content = $content . '<tr>';
-		$content = $content . '<td align="left">' . $codes[$i]['ID'] . '</td>';
+		$content = $content . '<td align="left">' . $codes[$i]['id'] . '</td>';
 		$content = $content . '<td align="left">' . $codes[$i]['value'] . '</td>';
 		$content = $content . '</tr>';
 	}
@@ -100,7 +100,7 @@ function mail_reject_account($to) {
 
 	$content = 'Dear Madame/Sir,\r\n we inform you that your registration to Banana bank was not approved.';
 
-	$headers = 'From:' $SYSTEM_EMAIL . '\r\n';
+	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
 	$headers .= 'MIME-Version: 1.0\r\n';
 	$headers .= 'Content-Transfer-Encoding: base64\r\n';
 	$headers .= 'Content-Type: text/html; charset=ISO-8859-1\r\n';
@@ -178,7 +178,7 @@ function parse_file($filename) {
 
 	$params = array();
 	while ($s = fgets($handle)) {
-		if (ord($s) == 32) // check if empty line
+		if (ord($s) == 32) // check if line is empty
 			break;
 		$words = str_word_count($s, 1, '1234567890!#$%&*+-/@=?^_`{|}~.');
 		array_push($params, $words);
