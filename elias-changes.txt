@@ -1,0 +1,13 @@
+Sanitized uploaded filename 
+Uploaded file size is now limited to 500 bytes
+Tighter input validation in uploaded file parsing
+Amount is now checked for negative or zero numbers
+Website is now HTTPS enabled
+Directory browsing is now prohibited
+Added Description functionality in the file parsing   <<<<<<<<---- done in PHP, but not in C
+Transaction can be approved only once
+Strong password checker + Minimum 6 characters passwords (needs fine tuning for strength)
+Sensitive username and password of database is now encrypted in runtime
+httponlyflag set
+email TANs as password protected PDF instead of plain text
+make dynamic passwords for PDF <<<<<-----

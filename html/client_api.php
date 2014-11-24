@@ -3,9 +3,10 @@
 require_once 'aux_func.php';
 require_once 'db.php';
 require_once '../pdf/mpdf.php';
+require_once '../phpsec/auth/user.php';
 
 
-function reg_client() {
+function reg_client() { 
 
 	print_debug_message('Checking if parameters are set...');
 	if (empty($_POST['email']) or empty($_POST['pass']))
@@ -28,6 +29,9 @@ function reg_client() {
 	if (!preg_match('/^[1-2]$/', $pdf))
 		return error('Invalid parameter (only 1 or 2 is allowed)');
 
+	if( strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
+		return error('Weak password! Make sure your password is stronger.');
+	
 	$res_arr = reg_client_db($email, $pass, $pdf);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
@@ -253,6 +257,8 @@ function set_trans_file() {
 		return error($res_arr['err_message']);
 
 	$params = parse_file($filename);
+	if($params == false)
+		return error('Uploaded file does not comply with rules!');
 	end($params);
 	$value = current($params);
 

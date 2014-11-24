@@ -244,7 +244,7 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 			return array('status' => false, 'err_message' => 'You entered an already used tancode!');
 
 		for ($i = 0 ; $i < count($params)-1 ; $i++)
-			$res_arr = transfer_money($account_num_src, $params[$i][0], $params[$i][1], '', 0);
+			$res_arr = transfer_money($account_num_src, $params[$i][0], $params[$i][1], $params[$i][2], 0);
 			if ($res_arr['status'] == false)
 				return $res_arr;
 
@@ -269,6 +269,8 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 
 function transfer_money($account_num_src, $account_num_dest, $amount, $description, $approval) {
 
+	if($amount <= 0)
+		return array('status' => false, 'err_message' => 'Only amounts larger than zero can be sent!');
 	try {
 		$con = get_dbconn();
 
@@ -557,15 +559,16 @@ function approve_trans_db($trans_id) {
 
 		print_debug_message('Checking if transaction exists...');
 		$trans_id = mysql_real_escape_string($trans_id);
-		$query = 'select account_num_src, account_num_dest, amount from TRANSACTIONS
+		$query = 'select account_num_src, account_num_dest, amount, is_approved from TRANSACTIONS
 			  where trans_id="' . $trans_id . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
 			return array('status' => false, 'err_message' => 'Non existing transaction with the specified id');
-
 		$row = mysqli_fetch_array($result);
+		if($row['is_approved'] == 1)
+			return array('status' => false, 'err_message' => 'Transaction has been already approved!');
 		$res_arr = transfer_money($row['account_num_src'], $row['account_num_dest'], $row['amount'], '', 1);
 		if ($res_arr['status'] == false)
 			return $res_arr;
@@ -718,8 +721,8 @@ function approve_user_db($email, $init_balance) {
 					$row = mysqli_fetch_array($result);
 					$codes[$i]['id'] = $row[0];
 				}
-
-				mail_tancodes($codes, $email);
+				$pass = "test";  #TODO: MAKE IT DYNAMIC
+				mail_tancodes($codes, $email, $account_num,$pass);
 			}
 		}
 

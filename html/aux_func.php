@@ -1,6 +1,7 @@
 <?php
 
 require_once 'config.php';
+require_once '../pdf/mpdf.php';
 
 
 function error($message) {
@@ -31,9 +32,7 @@ function sanitize_input($input) {
 	return $input;
 }
 
-function mail_tancodes($codes, $to) {
-
-	$subject = 'Your TAN codes';
+function mail_tancodes($codes, $to, $account_num, $pass) {
 
 	$content = '<!DOCTYPE html>
 		    <html>
@@ -50,7 +49,7 @@ function mail_tancodes($codes, $to) {
 
 		    <p>We would like to welcome you to our family. The Banana Bank family!</p>
 		    <p> At Banana Bank, we care about the safety of your bananas. That\'s why we have sent you TAN codes that will help us make sure that nobody can access your bananas except you!
-                    Keep these TAN codes safe, and don\'t show them to anyone! You will be asked to enter one each time you make a transaction.</p>
+                    Keep these codes safe, and don\'t show them to anyone! You will be asked to enter one each time you make a transaction.</p>
 
 		    <table style="width:40%">
 		    <tr>
@@ -64,16 +63,22 @@ function mail_tancodes($codes, $to) {
 		$content = $content . '</tr>';
 	}
 	$content = $content . '</table>';
-	$content = chunk_split(base64_encode($content));
+	
+	$mpdf = new mPDF();
+	$mpdf->SetProtection(array('copy','print'), $pass);
+	$mpdf->WriteHTML($content);
+	$filename = '/var/www/downloads/'. $account_num .'-' . rand(11,99) .'.pdf';
+	$mpdf->Output($filename, 'F');
+	
+	$subject = "'Your TAN codes'";
+	
+	$body = 'Attached is the TAN codes for your bank account, please use the password we provided you to open it.';
 
-	$headers = 'From:e.hazbon@gmail.com\r\n';
-	$headers .= 'MIME-Version: 1.0\r\n';
-	$headers .= 'Content-Transfer-Encoding: base64\r\n';
-	$headers .= 'Content-Type: text/html; charset=ISO-8859-1\r\n';
-
-	$retval = mail($to, $subject, $content, $headers);
-
-	return $retval;
+	shell_exec('echo ' . $body . ' | mutt -s ' . $subject . ' -a ' . $filename . ' -- ' . $to);
+	
+	unlink($filename);
+	
+	return;
 }
 
 function mail_reject_trans($to) {
@@ -156,13 +161,14 @@ function output_trans_hist_html($email, $trans_recs) {
 
 function upload_file() {
 
-	if ($_FILES['uploadFile']['size'] > 1000)
+	if ($_FILES['uploadFile']['size'] > 500)
 	    return array('status' => false, 'err_message' => 'Sorry, your file is too large.');
 
 	if (!($_FILES['uploadFile']['type'] == 'text/plain'))
 	    return array('status' => false, 'err_message' => 'Sorry, only text files are allowed.');
 
-	$target = "/var/www/uploads/{$_FILES['uploadFile']['name']}";
+	$name = sanitize_input($_FILES['uploadFile']['name']);
+	$target = '/var/www/uploads/' .$name;
 
 	if (move_uploaded_file($_FILES['uploadFile']['tmp_name'], $target))
 		print_debug_message('The file ' . basename($_FILES['uploadFile']['name']) . ' has been uploaded.');
@@ -181,7 +187,9 @@ function parse_file($filename) {
 	while ($s = fgets($handle)) {
 		if (ord($s) == 32) // check if line is empty
 			break;
-		$words = str_word_count($s, 1, '1234567890!#$%&*+-/@=?^_`{|}~.');
+		$words = str_word_count($s, 1, '1234567890');
+		if(count($words) != 3)
+			return false;
 		array_push($params, $words);
 	}
 	pclose($handle);
