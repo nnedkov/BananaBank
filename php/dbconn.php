@@ -13,7 +13,7 @@ function get_dbconn() {
 
 	if (mysqli_connect_errno()) {
 		print_debug_message('Failed to connect to MySQL!' .  mysqli_connect_error());
-		return error('Failed to connect to database');
+		return null;
 	}
 	print_debug_message('Established new MySQL connection.');
 

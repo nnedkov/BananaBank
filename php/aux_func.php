@@ -1,7 +1,7 @@
 <?php
 
 require_once 'config.php';
-require_once '../pdf/mpdf.php';
+require_once __DIR__ . '/../phppdf/mpdf.php';
 
 
 function error($message) {
@@ -17,6 +17,7 @@ function print_debug_message($message) {
 
 	global $DEBUG_MODE;
 	global $SILENT_MODE;
+
 	if ($DEBUG_MODE and $SILENT_MODE)
 		error_log($message . '\n', 3, '/var/tmp/my-errors.log');
 	elseif ($DEBUG_MODE)
@@ -63,22 +64,39 @@ function mail_tancodes($codes, $to, $account_num, $pass) {
 		$content = $content . '</tr>';
 	}
 	$content = $content . '</table>';
-	
+
 	$mpdf = new mPDF();
-	$mpdf->SetProtection(array('copy','print'), $pass);
+	$mpdf->SetProtection(array('copy', 'print'), $pass);
 	$mpdf->WriteHTML($content);
-	$filename = '/var/www/downloads/'. $account_num .'-' . rand(11,99) .'.pdf';
+	$filename = __DIR__ . '/../downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
 	$mpdf->Output($filename, 'F');
-	
-	$subject = "'Your TAN codes'";
-	
+
+	$subject = 'Your TAN codes';
+
 	$body = 'Attached is the TAN codes for your bank account, please use the password we provided you to open it.';
 
 	shell_exec('echo ' . $body . ' | mutt -s ' . $subject . ' -a ' . $filename . ' -- ' . $to);
-	
 	unlink($filename);
-	
+
 	return;
+}
+
+function mail_reject_account($to) {
+
+	global $SYSTEM_EMAIL;
+
+	$subject = 'Registration to Banana bank';
+
+	$content = 'Dear Madame/Sir,\r\n we inform you that your registration to Banana bank was not approved.';
+
+	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
+	$headers .= 'MIME-Version: 1.0\r\n';
+	$headers .= 'Content-Transfer-Encoding: base64\r\n';
+	$headers .= 'Content-Type: text/html; charset=ISO-8859-1\r\n';
+
+	$retval = mail($to, $subject, $content, $header);
+
+	return $retval;
 }
 
 function mail_reject_trans($to) {
@@ -99,23 +117,7 @@ function mail_reject_trans($to) {
 	return $retval;
 }
 
-function mail_reject_account($to) {
-
-	$subject = 'Registration to Banana bank';
-
-	$content = 'Dear Madame/Sir,\r\n we inform you that your registration to Banana bank was not approved.';
-
-	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
-	$headers .= 'MIME-Version: 1.0\r\n';
-	$headers .= 'Content-Transfer-Encoding: base64\r\n';
-	$headers .= 'Content-Type: text/html; charset=ISO-8859-1\r\n';
-
-	$retval = mail($to, $subject, $content, $header);
-
-	return $retval;
-}
-
-function output_trans_hist_html($email, $trans_recs) {
+function output_trans_hist_html($account_num, $trans_recs) {
 
 	$html = '<!DOCTYPE html>
 		 <html>
@@ -131,7 +133,7 @@ function output_trans_hist_html($email, $trans_recs) {
 		 <img style="vertical-align: top" src="./images/BananaBankLogo2.jpg" width="80" />
 		 <h2 align="center"> Banana Bank </h2>
 
-		 <p> Transaction history of ' . $email . ' as of '. date('Y/m/d') . ' ' . date('h:i:s') . '<br></p>
+		 <p> Transaction history of ' . $account_num . ' as of '. date('Y/m/d') . ' ' . date('h:i:s') . '<br></p>
 
 		 <table style="width:100%">
 		 <tr>
@@ -168,7 +170,7 @@ function upload_file() {
 	    return array('status' => false, 'err_message' => 'Sorry, only text files are allowed.');
 
 	$name = sanitize_input($_FILES['uploadFile']['name']);
-	$target = '/var/www/uploads/' .$name;
+	$target = __DIR__ . '/../uploads/' . $name;
 
 	if (move_uploaded_file($_FILES['uploadFile']['tmp_name'], $target))
 		print_debug_message('The file ' . basename($_FILES['uploadFile']['name']) . ' has been uploaded.');
@@ -181,7 +183,7 @@ function upload_file() {
 function parse_file($filename) {
 
 	print_debug_message('Parsing file ' . $res_arr['filename'] . '...');
-        $handle = popen('./main ' . $filename, 'r');
+        $handle = popen('../exe/set_trans_file ' . $filename, 'r');
 
 	$params = array();
 	while ($s = fgets($handle)) {

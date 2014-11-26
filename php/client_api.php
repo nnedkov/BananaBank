@@ -2,11 +2,11 @@
 
 require_once 'aux_func.php';
 require_once 'db.php';
-require_once '../pdf/mpdf.php';
-require_once '../phpsec/auth/user.php';
+//require_once __DIR__ . '/../phpsec/auth/user.php';
+require_once __DIR__ . '/../phppdf/mpdf.php';
 
 
-function reg_client() { 
+function reg_client() {
 
 	print_debug_message('Checking if parameters are set...');
 	if (empty($_POST['email']) or empty($_POST['pass']))
@@ -22,16 +22,18 @@ function reg_client() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 	print_debug_message('Checking if password content is valid...');
 	if (!preg_match('/^[a-zA-Z0-9]*$/', $pass))
 		return error('Invalid password (only letters and digits are allowed)');
-	print_debug_message('Checking if way of delivering tancodes is valid...');
-	if (!preg_match('/^[1-2]$/', $pdf))
-		return error('Invalid parameter (only 1 or 2 is allowed)');
+	//print_debug_message('Checking if password is strong enough...');
+	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
+	//	return error('Weak password! Make sure your password is stronger.');
+	print_debug_message('Checking if way of delivering tancodes is set...');
+	if (!preg_match('/^[0-1]$/', $pdf))
+		return error('Invalid parameter (only 0 or 1 is allowed)');
 
-	if( strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
-		return error('Weak password! Make sure your password is stronger.');
-	
 	$res_arr = reg_client_db($email, $pass, $pdf);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
@@ -64,6 +66,7 @@ function login_client() {
 	$_SESSION['email'] = $email;
 	$_SESSION['account_num'] = $res_arr['account_num'];
 	$_SESSION['is_employee'] = 'false';
+	$_SESSION['last_activity'] = time();
 	session_write_close();
 
 	$res = array('status' => 'true', 'message' => null);
@@ -96,8 +99,17 @@ function get_account_client() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
 		return error('Invalid session');
+
+	global $SESSION_DURATION;
+	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
+		session_unset();
+		session_destroy();
+		return error('Session has expired');
+	}
+	$_SESSION['last_activity'] = time();
+	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -122,8 +134,17 @@ function get_trans_client() {
 
 	print_debug_message('Checking if parameters were set during login in the session...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
+	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
 		return error('Invalid session');
+
+	global $SESSION_DURATION;
+	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
+		session_unset();
+		session_destroy();
+		return error('Session has expired');
+	}
+	$_SESSION['last_activity'] = time();
+	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -148,6 +169,15 @@ function get_trans_client_pdf() {
 	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
+	global $SESSION_DURATION;
+	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
+		session_unset();
+		session_destroy();
+		return error('Session has expired');
+	}
+	$_SESSION['last_activity'] = time();
+	session_write_close();
+
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
 
@@ -160,7 +190,7 @@ function get_trans_client_pdf() {
 	$html = output_trans_hist_html($account_num, $res_arr['trans_recs']);
 	$mpdf = new mPDF();
 	$mpdf->WriteHTML($html);
-	$mpdf->Output('/var/www/downloads/'. $account_num .'.pdf', 'F');
+	$mpdf->Output(__DIR__ . '/../downloads/' . $account_num . '.pdf', 'F');
 }
 
 function get_tancode_id() {
@@ -169,6 +199,14 @@ function get_tancode_id() {
 	session_start();
 	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
+
+	global $SESSION_DURATION;
+	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
+		session_unset();
+		session_destroy();
+		return error('Session has expired');
+	}
+	$_SESSION['last_activity'] = time();
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -196,6 +234,14 @@ function set_trans_form() {
 	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
 
+	global $SESSION_DURATION;
+	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
+		session_unset();
+		session_destroy();
+		return error('Session has expired');
+	}
+	$_SESSION['last_activity'] = time();
+
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
 
@@ -221,15 +267,26 @@ function set_trans_form() {
 	$tancode_value = sanitize_input($_POST['tancode_value']);
 	$description = sanitize_input($_POST['description']);
 
+	if (!preg_match('/^[0-9]*$/', $account_num_dest))
+		return error('Invalid destination account number');
+
+	if (!preg_match('/^[1-9][0-9]*.[0-9]*$/', $amount))
+		return error('Invalid amount');
+
 	if (strlen($tancode_value) != 15)
 		return error('Tancode length should be 15!');
 
 	if (strlen($description) == 0)
 		return error('Please provide description for the transaction!');
+	if (strlen($description) > 120)
+		return error('Description length should be at most 120 characters');
 
 	$res_arr = set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancode_id, $tancode_value, $description);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
+
+	unset($_SESSION['tan_code_id']);
+	session_write_close();
 
 	$res = array('status' => 'true', 'message' => null);
 
@@ -242,6 +299,14 @@ function set_trans_file() {
 	session_start();
 	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
 		return error('Invalid session');
+
+	global $SESSION_DURATION;
+	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
+		session_unset();
+		session_destroy();
+		return error('Session has expired');
+	}
+	$_SESSION['last_activity'] = time();
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -273,6 +338,9 @@ function set_trans_file() {
 	$res_arr = set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $params);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
+
+	unset($_SESSION['tan_code_id']);
+	session_write_close();
 
 	$res = array('status' => 'true', 'message' => null);
 
