@@ -26,13 +26,14 @@ function reg_emp() {
 		return error('Invalid password (only letters and digits are allowed)');
 	//print_debug_message('Checking if password is strong enough...');
 	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
-	//	return error('Weak password! Make sure your password is stronger.');
+	//	return error('Weak password. Make sure your password is stronger.');
 
 	$res_arr = reg_emp_db($email, $pass);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
@@ -50,6 +51,8 @@ function login_emp() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 
 	$res_arr = login_emp_db($email, $pass);
 	if ($res_arr['status'] == false)
@@ -62,25 +65,19 @@ function login_emp() {
 	$_SESSION['last_activity'] = time();
 	session_write_close();
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
 
 function logout_emp() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -92,25 +89,19 @@ function logout_emp() {
 	print_debug_message('Destroying the session...');
 	session_destroy();
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
 
 function get_clients() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -129,18 +120,11 @@ function get_clients() {
 
 function get_account_emp() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -156,6 +140,8 @@ function get_account_emp() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 
 	$res_arr = get_account_emp_db($email);
 	if ($res_arr['status'] == false)
@@ -171,18 +157,11 @@ function get_account_emp() {
 
 function get_trans_emp() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -198,6 +177,8 @@ function get_trans_emp() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 
 	$res_arr = get_trans_emp_db($email);
 	if ($res_arr['status'] == false)
@@ -212,18 +193,11 @@ function get_trans_emp() {
 
 function get_trans_emp_pdf() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -239,6 +213,8 @@ function get_trans_emp_pdf() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 
 	$res_arr = get_trans_emp_db($email);
 	if ($res_arr['status'] == false)
@@ -252,18 +228,11 @@ function get_trans_emp_pdf() {
 
 function get_trans() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -282,18 +251,11 @@ function get_trans() {
 
 function approve_trans() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -322,18 +284,11 @@ function approve_trans() {
 
 function reject_trans() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -354,27 +309,21 @@ function reject_trans() {
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
-	mail_reject_trans($email);
+	//mail_reject_trans($email);   # we don't have the email
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
 
 function get_new_users() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -393,18 +342,11 @@ function get_new_users() {
 
 function approve_user() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -419,8 +361,9 @@ function approve_user() {
 	else
 		$init_balance = sanitize_input($_POST['init_balance']);
 		print_debug_message('Checking if initial balance is a non-negative float...');
-		if (!preg_match('/^[1-9][0-9]*.[0-9]*$/', $init_balance))
+		if (!filter_var($init_balance, FILTER_VALIDATE_FLOAT) || floatval($init_balance) <= 0)
 			return error('Initial balance should be a non-negative float');
+		$init_balance = floatval($init_balance);
 
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
@@ -428,30 +371,26 @@ function approve_user() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 
 	$res_arr = approve_user_db($email, $init_balance);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
 
 function reject_user() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
@@ -467,6 +406,8 @@ function reject_user() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 
 	$res_arr = reject_user_db($email);
 	if ($res_arr['status'] == false)
@@ -474,7 +415,8 @@ function reject_user() {
 
 	mail_reject_account($email);
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }

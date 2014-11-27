@@ -24,6 +24,25 @@ function print_debug_message($message) {
 		echo $message . '<br>';
 }
 
+function is_valid_session() {
+
+	if (empty($_SESSION['email']) or
+	    empty($_SESSION['is_employee']) or
+	    empty($_SESSION['last_activity']))
+		return array('status' => false,
+			     'err_message' => 'Session is invalid');
+
+	global $SESSION_DURATION;
+
+	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
+		session_unset();
+		session_destroy();
+		return array('status' => false,
+			     'err_message' => 'Session has expired');
+	}
+	$_SESSION['last_activity'] = time();
+}
+
 function sanitize_input($input) {
 
 	$input = trim($input);
@@ -164,10 +183,12 @@ function output_trans_hist_html($account_num, $trans_recs) {
 function upload_file() {
 
 	if ($_FILES['uploadFile']['size'] > 500)
-	    return array('status' => false, 'err_message' => 'Sorry, your file is too large.');
+	    return array('status' => false,
+			 'err_message' => 'Sorry, your file is too large');
 
 	if (!($_FILES['uploadFile']['type'] == 'text/plain'))
-	    return array('status' => false, 'err_message' => 'Sorry, only text files are allowed.');
+	    return array('status' => false,
+			 'err_message' => 'Sorry, only text files are allowed');
 
 	$name = sanitize_input($_FILES['uploadFile']['name']);
 	$target = __DIR__ . '/../uploads/' . $name;
@@ -175,9 +196,11 @@ function upload_file() {
 	if (move_uploaded_file($_FILES['uploadFile']['tmp_name'], $target))
 		print_debug_message('The file ' . basename($_FILES['uploadFile']['name']) . ' has been uploaded.');
 	else
-		return array('status' => false, 'err_message' => 'Whoops something went wrong while trying to upload the file!');
+		return array('status' => false,
+			     'err_message' => 'Whoops, something went wrong while trying to upload the file');
 
-	return array('status' => true, 'filename' => $target);
+	return array('status' => true,
+		     'filename' => $target);
 }
 
 function parse_file($filename) {

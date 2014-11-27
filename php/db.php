@@ -9,7 +9,8 @@ function reg_client_db($email, $pass, $pdf) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if user with same email exists...');
 		$email = mysql_real_escape_string($email);
@@ -19,7 +20,8 @@ function reg_client_db($email, $pass, $pdf) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows != 0)
-			return array('status' => false, 'err_message' => 'Existing user with same email');
+			return array('status' => false,
+				     'err_message' => 'Existing user with same email');
 
 		print_debug_message('No registered user with same email exists. Inserting new user to db...');
 		$hash = password_hash($pass, PASSWORD_DEFAULT);
@@ -30,13 +32,15 @@ function reg_client_db($email, $pass, $pdf) {
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Unsuccesfully stored. Please try again');
+			return array('status' => false,
+				     'err_message' => 'Unsuccesfully stored. Please try again');
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -47,25 +51,28 @@ function login_client_db($email, $pass) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if credentials were correct...');
 		$email = mysql_real_escape_string($email);
-		$query = 'select * from USERS
-			  where email="' . $email . '" and
-			  is_employee=0';
+		$query = 'select password, is_approved from USERS
+			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Wrong email or password');
+			return array('status' => false,
+				     'err_message' => 'Wrong email or password');
 
 		$rec = mysqli_fetch_array($result);
 		$hash = $rec['password'];
 		if (!password_verify($pass, $hash))
-			return array('status' => false, 'err_message' => 'Wrong email or password');
+			return array('status' => false,
+				     'err_message' => 'Wrong email or password');
 		if ($rec['is_approved'] == 0)
-			return array('status' => false, 'err_message' => 'Registration not approved yet');
+			return array('status' => false,
+				     'err_message' => 'Registration not approved yet');
 
 		print_debug_message('Obtaining account number of user...');
 		$query = 'select account_number from BALANCE
@@ -74,7 +81,8 @@ function login_client_db($email, $pass) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Something went wrong');
+			return array('status' => false,
+				     'err_message' => 'Something went wrong');
 
 		$row = mysqli_fetch_array($result);
 		$account_num = $row['account_number'];
@@ -83,10 +91,12 @@ function login_client_db($email, $pass) {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'account_num' => $account_num);
+	return array('status' => true,
+		     'account_num' => $account_num);
 }
 
 function get_account_client_db($account_num) {
@@ -94,7 +104,8 @@ function get_account_client_db($account_num) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining account details of user...');
 		$query = 'select balance from BALANCE
@@ -103,7 +114,8 @@ function get_account_client_db($account_num) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => "User doesn't have an account");
+			return array('status' => false,
+				     'err_message' => "User doesn't have an account");
 
 		$row = mysqli_fetch_array($result);
 		$balance = $row['balance'];
@@ -112,10 +124,12 @@ function get_account_client_db($account_num) {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'balance' => $balance);
+	return array('status' => true,
+		     'balance' => $balance);
 }
 
 function get_trans_client_db($account_num) {
@@ -123,7 +137,8 @@ function get_trans_client_db($account_num) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining transaction records...');
 		$query = 'select trans_id, account_num_dest, amount, description, date, is_approved from TRANSACTIONS
@@ -146,10 +161,12 @@ function get_trans_client_db($account_num) {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'trans_recs' => $trans_recs);
+	return array('status' => true,
+		     'trans_recs' => $trans_recs);
 }
 
 function get_tancode_id_db($account_num) {
@@ -157,7 +174,8 @@ function get_tancode_id_db($account_num) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining free tancode id of user...');
 		$query = 'select tancode_id from TRANSACTION_CODES
@@ -167,11 +185,13 @@ function get_tancode_id_db($account_num) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'No free tancodes available!');
+			return array('status' => false,
+				     'err_message' => 'No free tancodes available');
 
 		$number = rand(0, $num_rows-1);
 		if (!mysqli_data_seek($result, $number))
-			return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+			return array('status' => false,
+				     'err_message' => 'Something went wrong. Please try again');
 
 		$row = mysqli_fetch_array($result);
 		$tancode_id = $row['tancode_id'];
@@ -180,10 +200,12 @@ function get_tancode_id_db($account_num) {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'tancode_id' => $tancode_id);
+	return array('status' => true,
+		     'tancode_id' => $tancode_id);
 }
 
 function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancode_id, $tancode_value, $description) {
@@ -191,7 +213,8 @@ function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancod
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if tancode is valid...');
 		$tancode_value = mysql_real_escape_string($tancode_value);
@@ -203,11 +226,13 @@ function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancod
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'You entered an invalid tancode!');
+			return array('status' => false,
+				     'err_message' => 'You entered an invalid tancode');
 
 		$row = mysqli_fetch_array($result);
 		if ($row['is_used'] != 0)
-			return array('status' => false, 'err_message' => 'You entered an already used tancode!');
+			return array('status' => false,
+				     'err_message' => 'You entered an already used tancode');
 
 		$res_arr = transfer_money($account_num_src, $account_num_dest, $amount, $description, 0);
 		if ($res_arr['status'] == false)
@@ -216,18 +241,19 @@ function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancod
 		$query = 'update TRANSACTION_CODES set is_used=1
 			  where account_number="' . $account_num_src . '" and
 			  tancode_id="' . $tancode_id . '"';
-
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => "Code wasn't set to used!");
+			return array('status' => false,
+				     'err_message' => "Code wasn't set to used");
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -238,28 +264,37 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if tancode is valid...');
 		$tancode_value = mysql_real_escape_string($tancode_value);
 		$query = 'select is_used from TRANSACTION_CODES where
-			  account_number= "' . $account_num_src . '" and
-			  tancode_id= "' . $tancode_id . '" and
-			  tancode = "' . $tancode_value . '"';
+			  account_number="' . $account_num_src . '" and
+			  tancode_id="' . $tancode_id . '" and
+			  tancode="' . $tancode_value . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'You entered an invalid tancode!');
+			return array('status' => false,
+				     'err_message' => 'You entered an invalid tancode');
 
 		$row = mysqli_fetch_array($result);
 		if ($row['is_used'] != 0)
-			return array('status' => false, 'err_message' => 'You entered an already used tancode!');
+			return array('status' => false,
+				     'err_message' => 'You entered an already used tancode');
 
-		for ($i = 0 ; $i < count($params)-1 ; $i++)
-			if (!preg_match('/^[1-9][0-9]*.[0-9]*$/', $params[$i][1]))
-				return error('Invalid amount in some of the transactions');
 		for ($i = 0 ; $i < count($params)-1 ; $i++) {
+
+			if (!filter_var($params[$i][1], FILTER_VALIDATE_FLOAT) || floatval($params[$i][1]) <= 0)
+				return array('status' => false,
+					     'err_message' => 'Invalid amount in some of the transactions');
+			$params[$i][1] = floatval($params[$i][1]);
+		}
+
+		for ($i = 0 ; $i < count($params)-1 ; $i++) {
+
 			$res_arr = transfer_money($account_num_src, $params[$i][0], $params[$i][1], $params[$i][2], 0);
 			if ($res_arr['status'] == false)
 				return $res_arr;
@@ -272,13 +307,15 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => "Code wasn't set to used!");
+			return array('status' => false,
+				     'err_message' => "Code wasn't set to used");
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -286,12 +323,15 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 
 function transfer_money($account_num_src, $account_num_dest, $amount, $description, $approval) {
 
-	if($amount <= 0)
-		return array('status' => false, 'err_message' => 'Only amounts larger than zero can be sent!');
+	if ($amount <= 0)
+		return array('status' => false,
+			     'err_message' => 'Only amounts larger than zero can be sent');
+
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if destination user exists...');
 		$account_num_dest = mysql_real_escape_string($account_num_dest);
@@ -301,7 +341,8 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Destination account is not registered or approved');
+			return array('status' => false,
+				     'err_message' => 'Destination account is not registered or approved');
 
 		print_debug_message('Checking if source user has sufficient balance...');
 		$query = 'select balance from BALANCE
@@ -310,12 +351,14 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+			return array('status' => false,
+				     'err_message' => 'Something went wrong. Please try again');
 
 		$amount = mysql_real_escape_string($amount);
 		$row = mysqli_fetch_array($result);
 		if ($row['balance'] < $amount)
-			return array('status' => false, 'err_message' => 'Your current balance is not sufficient to perform this transaction!');
+			return array('status' => false,
+				     'err_message' => 'Your current balance is not sufficient to perform this transaction');
 
 		mysqli_autocommit($con, false);
 		if ($amount <= 10000 || $approval == 1) {
@@ -328,7 +371,8 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 
 			$num_rows = mysqli_affected_rows($con);
 			if ($num_rows == 0)
-				return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+				return array('status' => false,
+					     'err_message' => 'Something went wrong. Please try again');
 
 			print_debug_message('Crediting ' . $amount . ' to ' . $account_num_dest . '...');
 			$query = 'update BALANCE set balance=balance+' . $amount . '
@@ -337,7 +381,8 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 
 			$num_rows = mysqli_affected_rows($con);
 			if ($num_rows == 0)
-				return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+				return array('status' => false,
+					     'err_message' => 'Something went wrong. Please try again');
 		} else {
 			print_debug_message('Transaction needs approval from an employee...');
 			$is_approved = 0;
@@ -355,7 +400,8 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 			$result = mysqli_query($con, $query);
 			$num_rows = mysqli_affected_rows($con);
 			if ($num_rows == 0)
-				return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+				return array('status' => false,
+					     'err_message' => 'Something went wrong. Please try again');
 		}
 
 		mysqli_commit($con);
@@ -363,7 +409,8 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -374,7 +421,8 @@ function reg_emp_db($email, $pass) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if user with same email exists...');
 		$email = mysql_real_escape_string($email);
@@ -384,7 +432,8 @@ function reg_emp_db($email, $pass) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows != 0)
-			return array('status' => false, 'err_message' => 'Existing user with same email');
+			return array('status' => false,
+				     'err_message' => 'Existing user with same email');
 
 		print_debug_message('No registered user with same email exists. Inserting new user to db...');
 		$hash = password_hash($pass, PASSWORD_DEFAULT);
@@ -394,13 +443,15 @@ function reg_emp_db($email, $pass) {
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Unsuccesfully stored. Please try again');
+			return array('status' => false,
+				     'err_message' => 'Unsuccesfully stored. Please try again');
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -411,31 +462,35 @@ function login_emp_db($email, $pass) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if credentials were correct...');
 		$email = mysql_real_escape_string($email);
-		$query = 'select * from USERS
-			  where email="' . $email . '" and
-			  is_employee=1';
+		$query = 'select password, is_approved from USERS
+			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Wrong email or password');
+			return array('status' => false,
+				     'err_message' => 'Wrong email or password');
 
 		$rec = mysqli_fetch_array($result);
 		$hash = $rec['password'];
 		if (!password_verify($pass, $hash))
-			return array('status' => false, 'err_message' => 'Wrong email or password');
+			return array('status' => false,
+				     'err_message' => 'Wrong email or password');
 		if ($rec['is_approved'] == 0)
-			return array('status' => false, 'err_message' => 'Registration not approved yet');
+			return array('status' => false,
+				     'err_message' => 'Registration not approved yet');
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -446,7 +501,8 @@ function get_clients_db() {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining list of all clients...');
 		$query = 'select email from USERS
@@ -455,19 +511,19 @@ function get_clients_db() {
 		$result = mysqli_query($con, $query);
 
 		$clients = array();
-		while ($rec = mysqli_fetch_array($result)) {
-			$client = $rec['email'];
-			array_push($clients, $client);
-		}
+		while ($rec = mysqli_fetch_array($result))
+			array_push($clients, $rec['email']);
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'clients' => $clients);
+	return array('status' => true,
+		     'clients' => $clients);
 }
 
 function get_account_emp_db($email) {
@@ -475,7 +531,8 @@ function get_account_emp_db($email) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining user account details...');
 		$email = mysql_real_escape_string($email);
@@ -485,7 +542,8 @@ function get_account_emp_db($email) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Email is not registered');
+			return array('status' => false,
+				     'err_message' => 'Something went wrong');
 
 		$row = mysqli_fetch_array($result);
 		$balance = $row['balance'];
@@ -495,10 +553,13 @@ function get_account_emp_db($email) {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'balance' => $balance, 'account_number' => $account_number);
+	return array('status' => true,
+		     'balance' => $balance,
+		     'account_number' => $account_number);
 }
 
 function get_trans_emp_db($email) {
@@ -506,7 +567,8 @@ function get_trans_emp_db($email) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining user account number...');
 		$email = mysql_real_escape_string($email);
@@ -516,7 +578,8 @@ function get_trans_emp_db($email) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+			return array('status' => false,
+				     'err_message' => 'Something went wrong. Please try again');
 
 		$row = mysqli_fetch_array($result);
 		$account_num = $row['account_number'];
@@ -543,10 +606,13 @@ function get_trans_emp_db($email) {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'account_num' => $account_num, 'trans_recs' => $trans_recs);
+	return array('status' => true,
+		     'account_num' => $account_num,
+		     'trans_recs' => $trans_recs);
 }
 
 function get_trans_db() {
@@ -554,7 +620,8 @@ function get_trans_db() {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining unapproved transaction records...');
 		$query = 'select trans_id, account_num_src, account_num_dest, amount, description, date from TRANSACTIONS
@@ -578,10 +645,12 @@ function get_trans_db() {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'trans_recs' => $trans_recs);
+	return array('status' => true,
+		     'trans_recs' => $trans_recs);
 }
 
 function approve_trans_db($trans_id) {
@@ -589,7 +658,8 @@ function approve_trans_db($trans_id) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Checking if transaction exists...');
 		$trans_id = mysql_real_escape_string($trans_id);
@@ -599,10 +669,14 @@ function approve_trans_db($trans_id) {
 
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Non existing transaction with the specified id');
+			return array('status' => false,
+				     'err_message' => 'Non existing transaction with the specified id');
+
 		$row = mysqli_fetch_array($result);
 		if($row['is_approved'] == 1)
-			return array('status' => false, 'err_message' => 'Transaction has been already approved!');
+			return array('status' => false,
+				     'err_message' => 'Transaction has been already approved');
+
 		$res_arr = transfer_money($row['account_num_src'], $row['account_num_dest'], $row['amount'], '', 1);
 		if ($res_arr['status'] == false)
 			return $res_arr;
@@ -613,13 +687,15 @@ function approve_trans_db($trans_id) {
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Something went wrong');
+			return array('status' => false,
+				     'err_message' => 'Something went wrong');
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -630,24 +706,26 @@ function reject_trans_db($trans_id) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Deleting transaction from db...');
 		$trans_id = mysql_real_escape_string($trans_id);
 		$query = 'delete from TRANSACTIONS
-			  where trans_id="' . $trans_id . '"
-			  and is_approved=0';
+			  where trans_id="' . $trans_id . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Non existing transaction with the specified id');
+			return array('status' => false,
+				     'err_message' => 'Non existing transaction with the specified id');
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -658,7 +736,8 @@ function get_new_users_db() {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Obtaining new users...');
 		$query = 'select email, is_employee from USERS
@@ -676,10 +755,12 @@ function get_new_users_db() {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true, 'new_users' => $new_users);
+	return array('status' => true,
+		     'new_users' => $new_users);
 }
 
 function approve_user_db($email, $init_balance) {
@@ -687,18 +768,19 @@ function approve_user_db($email, $init_balance) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
 		print_debug_message('Approving new user...');
 		$email = mysql_real_escape_string($email);
 		$query = 'update USERS set is_approved=1
-			  where email="' . $email . '" and
-			  is_approved=0';
+			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Non existing user with the specified email');
+			return array('status' => false,
+				     'err_message' => 'Non existing user with the specified email');
 
 		print_debug_message('Obtaining info about user...');
 		$query = 'select is_employee, pdf from USERS
@@ -707,15 +789,15 @@ function approve_user_db($email, $init_balance) {
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Something went wrong');
+			return array('status' => false,
+				     'err_message' => 'Something went wrong');
 
 		$row = mysqli_fetch_array($result);
 		$is_employee = $row['is_employee'];
 		$pdf = $row['pdf'];
 
 		if ($is_employee == 0) {
-			if ($num_rows == 0)
-				return array('status' => false, 'err_message' => 'Initial balance not specified');
+
 			print_debug_message('Setting initial balance...');
 			$init_balance = mysql_real_escape_string($init_balance);
 			$query = 'insert into BALANCE (email, balance)
@@ -724,7 +806,8 @@ function approve_user_db($email, $init_balance) {
 
 			$num_rows = mysqli_affected_rows($con);
 			if ($num_rows == 0)
-				return array('status' => false, 'err_message' => "Can't add money to user!. Please try again");
+				return array('status' => false,
+					     'err_message' => "Couldn't set initial balance. Please try again");
 
 			print_debug_message('Obtaining account number of user...');
 			$query = 'select LAST_INSERT_ID()';
@@ -732,7 +815,8 @@ function approve_user_db($email, $init_balance) {
 
 			$num_rows = mysqli_num_rows($result);
 			if ($num_rows == 0)
-				return array('status' => false, 'err_message' => 'Something went wrong');
+				return array('status' => false,
+					     'err_message' => 'Something went wrong');
 
 			$row = mysqli_fetch_array($result);
 			$account_num = $row[0];
@@ -743,25 +827,28 @@ function approve_user_db($email, $init_balance) {
 				for ($i = 0 ; $i < 100 ; $i++) {
 					print_debug_message('Storing tancodes...');
 					$codes[$i]['value'] = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));
-					$query = 'insert into TRANSACTION_CODES (tancode, account_number)
-					          values ("' . $codes[$i]['value'] . '", "' . $account_num . '")';
+					$query = 'insert into TRANSACTION_CODES (account_number, tancode)
+					          values ("' . $account_num . '", "' . $codes[$i]['value'] . '")';
 					$result = mysqli_query($con, $query);
 
 					$num_rows = mysqli_affected_rows($con);
 					if ($num_rows == 0)
-						return array('status' => false, 'err_message' => 'Whoops, something went wrong while adding tancodes');
+						return array('status' => false,
+							     'err_message' => 'Whoops, something went wrong while adding tancodes');
 
 					$query = 'select LAST_INSERT_ID()';
 					$result = mysqli_query($con, $query);
 
 					$num_rows = mysqli_num_rows($result);
 					if ($num_rows == 0)
-						return array('status' => false, 'err_message' => 'Something went wrong');
+						return array('status' => false,
+							     'err_message' => 'Something went wrong');
 
 					$row = mysqli_fetch_array($result);
 					$codes[$i]['id'] = $row[0];
 				}
-				$pass = "test";  # TODO: MAKE IT DYNAMIC
+
+				$pass = 'test';  # TODO: make it dynamic
 				mail_tancodes($codes, $email, $account_num, $pass);
 			}
 		}
@@ -770,7 +857,8 @@ function approve_user_db($email, $init_balance) {
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);
@@ -781,24 +869,26 @@ function reject_user_db($email) {
 	try {
 		$con = get_dbconn();
 		if ($con == null)
-			return array('status' => false, 'err_message' => 'Failed to connect to database');
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
 
-		print_debug_message('Rejecting new user...');
+		print_debug_message('Deleting new user...');
 		$email = mysql_real_escape_string($email);
 		$query = 'delete from USERS
-			  where email="' . $email . '" and
-			  is_approved=0';
+			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
 		if ($num_rows == 0)
-			return array('status' => false, 'err_message' => 'Non existing user with the specified email');
+			return array('status' => false,
+				     'err_message' => 'Non existing user with the specified email');
 
 		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
-		return array('status' => false, 'err_message' => 'Something went wrong. Please try again');
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
 	}
 
 	return array('status' => true);

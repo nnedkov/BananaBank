@@ -12,7 +12,7 @@ function reg_client() {
 	if (empty($_POST['email']) or empty($_POST['pass']))
 		return error('Email or password not specified');
 	if (empty($_POST['pdf']))
-		return error('Way of delivering tancodes is not specified');
+		return error('Way of authenticating transactions not specified');
 
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
@@ -29,8 +29,8 @@ function reg_client() {
 		return error('Invalid password (only letters and digits are allowed)');
 	//print_debug_message('Checking if password is strong enough...');
 	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
-	//	return error('Weak password! Make sure your password is stronger.');
-	print_debug_message('Checking if way of delivering tancodes is set...');
+	//	return error('Weak password! Make sure your password is stronger');
+	print_debug_message('Checking if way of authenticating transactions is valid...');
 	if (!preg_match('/^[0-1]$/', $pdf))
 		return error('Invalid parameter (only 0 or 1 is allowed)');
 
@@ -38,7 +38,8 @@ function reg_client() {
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
@@ -56,6 +57,8 @@ function login_client() {
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
+     	if (strlen($email) > 64)
+		return error('Email length should be at most 64 characters');
 
 	$res_arr = login_client_db($email, $pass);
 	if ($res_arr['status'] == false)
@@ -69,17 +72,20 @@ function login_client() {
 	$_SESSION['last_activity'] = time();
 	session_write_close();
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
 
 function logout_client() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
-		return error('Invalid session');
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
+	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -90,25 +96,19 @@ function logout_client() {
 	print_debug_message('Destroying the session...');
 	session_destroy();
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
 
 function get_account_client() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -132,18 +132,11 @@ function get_account_client() {
 
 function get_trans_client() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']) or empty($_SESSION['last_activity']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -164,18 +157,11 @@ function get_trans_client() {
 
 function get_trans_client_pdf() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
@@ -195,18 +181,11 @@ function get_trans_client_pdf() {
 
 function get_tancode_id() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -229,18 +208,11 @@ function get_tancode_id() {
 
 function set_trans_form() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -270,14 +242,15 @@ function set_trans_form() {
 	if (!preg_match('/^[0-9]*$/', $account_num_dest))
 		return error('Invalid destination account number');
 
-	if (!preg_match('/^[1-9][0-9]*.[0-9]*$/', $amount))
+	if (!filter_var($amount, FILTER_VALIDATE_FLOAT) || floatval($amount) <= 0)
 		return error('Invalid amount');
+	$amount = floatval($amount);
 
 	if (strlen($tancode_value) != 15)
-		return error('Tancode length should be 15!');
+		return error('Tancode length should be 15');
 
 	if (strlen($description) == 0)
-		return error('Please provide description for the transaction!');
+		return error('Please provide description for the transaction');
 	if (strlen($description) > 120)
 		return error('Description length should be at most 120 characters');
 
@@ -288,25 +261,19 @@ function set_trans_form() {
 	unset($_SESSION['tan_code_id']);
 	session_write_close();
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
 
 function set_trans_file() {
 
-	print_debug_message('Checking if parameters were set during login in the session...');
+	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
-	if (empty($_SESSION['email']) or empty($_SESSION['account_num']) or empty($_SESSION['is_employee']))
-		return error('Invalid session');
-
-	global $SESSION_DURATION;
-	if (time() - $_SESSION['last_activity'] > $SESSION_DURATION) {
-		session_unset();
-		session_destroy();
-		return error('Session has expired');
-	}
-	$_SESSION['last_activity'] = time();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
@@ -323,17 +290,17 @@ function set_trans_file() {
 
 	$params = parse_file($filename);
 	if($params == false)
-		return error('Uploaded file does not comply with rules!');
+		return error('Uploaded file does not comply with rules');
 	end($params);
 	$value = current($params);
 
 	if (count($value) != 1)
-		return error('Uploaded file does not comply with rules! Last line should have only tan code');
-
-	if (strlen($value[0]) != 15)
-		return error('Tan code entered is not 15 characters!');
+		return error('Uploaded file does not comply with rules. Last line should have only TAN code');
 
 	$tancode_value = sanitize_input($value[0]);
+
+	if (strlen($value[0]) != 15)
+		return error('TAN code entered is not 15 characters');
 
 	$res_arr = set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $params);
 	if ($res_arr['status'] == false)
@@ -342,7 +309,8 @@ function set_trans_file() {
 	unset($_SESSION['tan_code_id']);
 	session_write_close();
 
-	$res = array('status' => 'true', 'message' => null);
+	$res = array('status' => 'true',
+		     'message' => null);
 
 	echo json_encode($res);
 }
