@@ -78,7 +78,6 @@ function logout_emp() {
 	$res_arr = is_valid_session();
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
-	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'false')
 		return error('Unauthorized operation for client');
@@ -357,22 +356,22 @@ function approve_user() {
 		return error('Email not specified');
 	print_debug_message('Checking if initial balance parameter is set...');
 	if (empty($_POST['init_balance']))
-		$init_balance = null;
-	else
-		$init_balance = sanitize_input($_POST['init_balance']);
-		print_debug_message('Checking if initial balance is a non-negative float...');
-		if (!filter_var($init_balance, FILTER_VALIDATE_FLOAT) || floatval($init_balance) <= 0)
-			return error('Initial balance should be a non-negative float');
-		$init_balance = floatval($init_balance);
+		return error('Initial balance not specified');
 
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
+	$init_balance = sanitize_input($_POST['init_balance']);
 
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
+
+	print_debug_message('Checking if initial balance is a non-negative float...');
+	if (!filter_var($init_balance, FILTER_VALIDATE_FLOAT) || floatval($init_balance) <= 0)
+		return error('Initial balance should be a non-negative float');
+	$init_balance = floatval($init_balance);
 
 	$res_arr = approve_user_db($email, $init_balance);
 	if ($res_arr['status'] == false)

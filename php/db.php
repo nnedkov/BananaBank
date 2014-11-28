@@ -57,7 +57,8 @@ function login_client_db($email, $pass) {
 		print_debug_message('Checking if credentials were correct...');
 		$email = mysql_real_escape_string($email);
 		$query = 'select password, is_approved from USERS
-			  where email="' . $email . '"';
+			  where email="' . $email . '" and
+			  is_employee=0';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -405,7 +406,6 @@ function transfer_money($account_num_src, $account_num_dest, $amount, $descripti
 		}
 
 		mysqli_commit($con);
-		close_dbconn($con);
 
 	} catch (Exception $e) {
 		print_debug_message('Exception occured: ' . $e->getMessage());
@@ -468,7 +468,8 @@ function login_emp_db($email, $pass) {
 		print_debug_message('Checking if credentials were correct...');
 		$email = mysql_real_escape_string($email);
 		$query = 'select password, is_approved from USERS
-			  where email="' . $email . '"';
+			  where email="' . $email . '" and
+			  is_employee=1';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -875,7 +876,9 @@ function reject_user_db($email) {
 		print_debug_message('Deleting new user...');
 		$email = mysql_real_escape_string($email);
 		$query = 'delete from USERS
-			  where email="' . $email . '"';
+			  where email="' . $email . '" and
+			  is_employee=0 and
+			  is_approved=0';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);

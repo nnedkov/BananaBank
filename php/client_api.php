@@ -31,8 +31,8 @@ function reg_client() {
 	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
 	//	return error('Weak password! Make sure your password is stronger');
 	print_debug_message('Checking if way of authenticating transactions is valid...');
-	if (!preg_match('/^[0-1]$/', $pdf))
-		return error('Invalid parameter (only 0 or 1 is allowed)');
+	if (!preg_match('/^[1-2]$/', $pdf))
+		return error('Invalid parameter (only 1 or 2 is allowed)');
 
 	$res_arr = reg_client_db($email, $pass, $pdf);
 	if ($res_arr['status'] == false)
@@ -85,7 +85,6 @@ function logout_client() {
 	$res_arr = is_valid_session();
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
-	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');

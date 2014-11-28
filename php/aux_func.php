@@ -41,6 +41,8 @@ function is_valid_session() {
 			     'err_message' => 'Session has expired');
 	}
 	$_SESSION['last_activity'] = time();
+
+	return array('status' => true);
 }
 
 function sanitize_input($input) {
