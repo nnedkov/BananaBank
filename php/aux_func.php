@@ -54,7 +54,7 @@ function sanitize_input($input) {
 	return $input;
 }
 
-function mail_tancodes($codes, $to, $account_num, $pass) {
+function mail_tancodes($to, $codes, $account_num, $pdf_password) {
 
 	$content = '<!DOCTYPE html>
 		    <html>
@@ -87,7 +87,7 @@ function mail_tancodes($codes, $to, $account_num, $pass) {
 	$content = $content . '</table>';
 
 	$mpdf = new mPDF();
-	$mpdf->SetProtection(array('copy', 'print'), $pass);
+	$mpdf->SetProtection(array('copy', 'print'), $pdf_password);
 	$mpdf->WriteHTML($content);
 	$filename = __DIR__ . '/../downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
 	$mpdf->Output($filename, 'F');
@@ -100,6 +100,10 @@ function mail_tancodes($codes, $to, $account_num, $pass) {
 	unlink($filename);
 
 	return;
+}
+
+function mail_scs_pass($email, $scs_password, $account_num, $pdf_password) {
+	# TODO: send password protected pdf with scs password inside
 }
 
 function mail_reject_account($to) {
@@ -127,6 +131,25 @@ function mail_reject_trans($to) {
 	$subject = 'Transaction in Banana bank';
 
 	$content = 'Dear Madame/Sir,\r\n we inform you that your transaction in Banana bank was not approved.';
+
+	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
+	$headers .= 'MIME-Version: 1.0\r\n';
+	$headers .= 'Content-Transfer-Encoding: base64\r\n';
+	$headers .= 'Content-Type: text/html; charset=ISO-8859-1\r\n';
+
+	$retval = mail($to, $subject, $content, $header);
+
+	return $retval;
+}
+
+function mail_token($to, $token) {
+
+	global $SYSTEM_EMAIL;
+
+	$subject = 'Password recovery in Banana bank';
+
+	$content = 'Dear Madame/Sir,\r\n click on the url below in order to change your password:\r\n';
+	$content .= 'https://localhost/banana_bank/html/pass_recovery.html?token=' . $token;
 
 	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
 	$headers .= 'MIME-Version: 1.0\r\n';

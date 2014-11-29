@@ -11,35 +11,33 @@ function reg_client() {
 	print_debug_message('Checking if parameters are set...');
 	if (empty($_POST['email']) or empty($_POST['pass']))
 		return error('Email or password not specified');
-	if (empty($_POST['pdf']))
+	if (empty($_POST['scs']))
 		return error('Way of authenticating transactions not specified');
 
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
 	$pass = sanitize_input($_POST['pass']);
-	$pdf = sanitize_input($_POST['pdf']);
+	$scs = sanitize_input($_POST['scs']);
 
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
-	print_debug_message('Checking if password content is valid...');
-	if (!preg_match('/^[a-zA-Z0-9]*$/', $pass))
-		return error('Invalid password (only letters and digits are allowed)');
 	//print_debug_message('Checking if password is strong enough...');
 	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
-	//	return error('Weak password! Make sure your password is stronger');
+	//	return error('Weak password. Make sure your password is stronger');
 	print_debug_message('Checking if way of authenticating transactions is valid...');
-	if (!preg_match('/^[1-2]$/', $pdf))
+	if (!preg_match('/^[0-1]$/', $scs))
 		return error('Invalid parameter (only 1 or 2 is allowed)');
 
-	$res_arr = reg_client_db($email, $pass, $pdf);
+	$res_arr = reg_client_db($email, $pass, $scs);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
 	$res = array('status' => 'true',
-		     'message' => null);
+		     'message' => null,
+		     'pdf_password' => $res_arr['pdf_password']);
 
 	echo json_encode($res);
 }
@@ -99,6 +97,21 @@ function logout_client() {
 		     'message' => null);
 
 	echo json_encode($res);
+}
+
+function download_scs_exe() {
+
+	print_debug_message('Checking if parameters were set in the session during login...');
+	session_start();
+	$res_arr = is_valid_session();
+	if ($res_arr['status'] == false)
+		return error($res_arr['err_message']);
+	session_write_close();
+
+	if ($_SESSION['is_employee'] == 'true')
+		return error('Invalid operation for employee');
+
+	# TODO: send the scs.exe
 }
 
 function get_account_client() {
@@ -189,9 +202,10 @@ function get_tancode_id() {
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
 
+	$email = $_SESSION['email'];
 	$account_num = $_SESSION['account_num'];
 
-	$res_arr = get_tancode_id_db($account_num);
+	$res_arr = get_tancode_id_db($email, $account_num);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
@@ -221,6 +235,8 @@ function set_trans_form() {
 
 	$account_num_src = $_SESSION['account_num'];
 	$tancode_id = $_SESSION['tan_code_id'];
+	# TODO: if ($tancode_id == 0) it means that the user has registered for SCS use
+	#	and therefore we will need to follow a different workflow that the one below
 
 	print_debug_message('Checking if parameters are set...');
 	if (empty($_POST['account_num_dest']))

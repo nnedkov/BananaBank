@@ -4,7 +4,102 @@ require_once 'dbconn.php';
 require_once 'aux_func.php';
 
 
-function reg_client_db($email, $pass, $pdf) {
+function recover_pass_db($email) {
+
+	global $PASSREC_TOKEN_DURATION;
+
+	try {
+		$con = get_dbconn();
+		if ($con == null)
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
+
+		print_debug_message('Checking if user with the provided email exists...');
+		$email = mysql_real_escape_string($email);
+		$query = 'select is_approved from USERS
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return array('status' => false,
+				     'err_message' => 'No existing user with the provided email');
+
+		$rec = mysqli_fetch_array($result);
+		if ($rec['is_approved'] == 0)
+			return array('status' => false,
+				     'err_message' => 'Registration not approved yet');
+
+		print_debug_message('Producing token for the password update...');
+		$token = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));   # TODO: create random token of length 15 characters
+		$query = 'update USERS set password_token="' . $token . '", exp_date=ADDTIME(now(), ' . $PASSREC_TOKEN_DURATION . '), was_used=0
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_affected_rows($con);
+		if ($num_rows == 0)
+			return array('status' => false,
+				     'err_message' => 'Something went wrong. Please try again');
+
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
+	}
+
+	return array('status' => true,
+		     'token' => $token);
+}
+
+function change_pass_db($token, $new_pass) {
+
+	try {
+		$con = get_dbconn();
+		if ($con == null)
+			return array('status' => false,
+				     'err_message' => 'Failed to connect to database');
+
+		print_debug_message('Checking if token is valid...');
+		$token = mysql_real_escape_string($token);
+		$query = 'select email from USERS
+			  where password_token="' . $token . '"
+			  and now()<=exp_date
+			  and was_used=0';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return array('status' => false,
+				     'err_message' => 'Non existing or expired token');
+
+		$rec = mysqli_fetch_array($result);
+		$email = $rec['email'];
+
+		print_debug_message('Updating password...');
+		$hash = password_hash($new_pass, PASSWORD_DEFAULT);
+		$query = 'update USERS set password="' . $hash . '", was_used=1
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_affected_rows($con);
+		if ($num_rows == 0)
+			return array('status' => false,
+				     'err_message' => 'Something went wrong. Please try again');
+
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return array('status' => false,
+			     'err_message' => 'Something went wrong. Please try again');
+	}
+
+	return array('status' => true);
+}
+
+function reg_client_db($email, $pass, $scs) {
 
 	try {
 		$con = get_dbconn();
@@ -25,9 +120,10 @@ function reg_client_db($email, $pass, $pdf) {
 
 		print_debug_message('No registered user with same email exists. Inserting new user to db...');
 		$hash = password_hash($pass, PASSWORD_DEFAULT);
-		$pdf = mysql_real_escape_string($pdf);
-		$query = 'insert into USERS (email, password, pdf)
-			  values ("' . $email . '", "' . $hash . '", "' . $pdf . '")';
+		$scs = mysql_real_escape_string($scs);
+		$pdf_password = '12345';   # TODO: produce a random password of 8 characters
+		$query = 'insert into USERS (email, password, scs, pdf_password)
+			  values ("' . $email . '", "' . $hash . '", "' . $scs . '", "' . $pdf_password . '")';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
@@ -43,7 +139,8 @@ function reg_client_db($email, $pass, $pdf) {
 			     'err_message' => 'Something went wrong. Please try again');
 	}
 
-	return array('status' => true);
+	return array('status' => true,
+		     'pdf_password' => $pdf_password);
 }
 
 function login_client_db($email, $pass) {
@@ -57,8 +154,8 @@ function login_client_db($email, $pass) {
 		print_debug_message('Checking if credentials were correct...');
 		$email = mysql_real_escape_string($email);
 		$query = 'select password, is_approved from USERS
-			  where email="' . $email . '" and
-			  is_employee=0';
+			  where email="' . $email . '"
+			  and is_employee=0';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -170,7 +267,7 @@ function get_trans_client_db($account_num) {
 		     'trans_recs' => $trans_recs);
 }
 
-function get_tancode_id_db($account_num) {
+function get_tancode_id_db($email, $account_num) {
 
 	try {
 		$con = get_dbconn();
@@ -178,10 +275,29 @@ function get_tancode_id_db($account_num) {
 			return array('status' => false,
 				     'err_message' => 'Failed to connect to database');
 
+		print_debug_message('Checking if user has registered for SCS...');
+		$email = mysql_real_escape_string($email);
+		$query = 'select scs from USERS
+			  where email="' . $email . '"
+			  and is_approved=1
+			  and is_employee=0';
+		$result = mysqli_query($con, $query);
+
+		$num_rows = mysqli_num_rows($result);
+		if ($num_rows == 0)
+			return array('status' => false,
+				     'err_message' => 'Something went wrong');
+
+		$row = mysqli_fetch_array($result);
+		$scs = $row['scs'];
+		if ($scs == 1)
+			return array('status' => true,
+				     'tancode_id' => 0);
+
 		print_debug_message('Obtaining free tancode id of user...');
 		$query = 'select tancode_id from TRANSACTION_CODES
-			  where account_number="' . $account_num . '" and
-			  is_used=0';
+			  where account_number="' . $account_num . '"
+			  and is_used=0';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -219,10 +335,10 @@ function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancod
 
 		print_debug_message('Checking if tancode is valid...');
 		$tancode_value = mysql_real_escape_string($tancode_value);
-		$query = 'select is_used from TRANSACTION_CODES where
-			  account_number= "' . $account_num_src . '" and
-			  tancode_id="' . $tancode_id . '" and
-			  tancode="' . $tancode_value . '"';
+		$query = 'select is_used from TRANSACTION_CODES
+			  where account_number= "' . $account_num_src . '"
+			  and tancode_id="' . $tancode_id . '"
+			  and tancode="' . $tancode_value . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -240,8 +356,8 @@ function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancod
 			return $res_arr;
 
 		$query = 'update TRANSACTION_CODES set is_used=1
-			  where account_number="' . $account_num_src . '" and
-			  tancode_id="' . $tancode_id . '"';
+			  where account_number="' . $account_num_src . '"
+			  and tancode_id="' . $tancode_id . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
@@ -271,9 +387,9 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 		print_debug_message('Checking if tancode is valid...');
 		$tancode_value = mysql_real_escape_string($tancode_value);
 		$query = 'select is_used from TRANSACTION_CODES where
-			  account_number="' . $account_num_src . '" and
-			  tancode_id="' . $tancode_id . '" and
-			  tancode="' . $tancode_value . '"';
+			  where account_number="' . $account_num_src . '"
+			  and tancode_id="' . $tancode_id . '"
+			  and tancode="' . $tancode_value . '"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -302,8 +418,8 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 		}
 
 		$query = 'update TRANSACTION_CODES set is_used=1
-			  where account_number="' . $account_num_src . '" and
-			  tancode_id="' . $tancode_id .'"';
+			  where account_number="' . $account_num_src . '"
+			  and tancode_id="' . $tancode_id .'"';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);
@@ -468,8 +584,8 @@ function login_emp_db($email, $pass) {
 		print_debug_message('Checking if credentials were correct...');
 		$email = mysql_real_escape_string($email);
 		$query = 'select password, is_approved from USERS
-			  where email="' . $email . '" and
-			  is_employee=1';
+			  where email="' . $email . '"
+			  and is_employee=1';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_num_rows($result);
@@ -784,7 +900,7 @@ function approve_user_db($email, $init_balance) {
 				     'err_message' => 'Non existing user with the specified email');
 
 		print_debug_message('Obtaining info about user...');
-		$query = 'select is_employee, pdf from USERS
+		$query = 'select is_employee, scs, pdf_password from USERS
 			  where email="'. $email. '"';
 		$result = mysqli_query($con, $query);
 
@@ -795,7 +911,8 @@ function approve_user_db($email, $init_balance) {
 
 		$row = mysqli_fetch_array($result);
 		$is_employee = $row['is_employee'];
-		$pdf = $row['pdf'];
+		$scs = $row['scs'];
+		$pdf_password = $row['pdf_password'];
 
 		if ($is_employee == 0) {
 
@@ -822,35 +939,57 @@ function approve_user_db($email, $init_balance) {
 			$row = mysqli_fetch_array($result);
 			$account_num = $row[0];
 
-			if ($pdf == 1) {
+			if ($scs == 0) {
 
 				$codes = array();
 				for ($i = 0 ; $i < 100 ; $i++) {
-					print_debug_message('Storing tancodes...');
-					$codes[$i]['value'] = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));
-					$query = 'insert into TRANSACTION_CODES (account_number, tancode)
-					          values ("' . $account_num . '", "' . $codes[$i]['value'] . '")';
-					$result = mysqli_query($con, $query);
 
-					$num_rows = mysqli_affected_rows($con);
-					if ($num_rows == 0)
-						return array('status' => false,
-							     'err_message' => 'Whoops, something went wrong while adding tancodes');
-
-					$query = 'select LAST_INSERT_ID()';
+					$query = 'select max(tancode_id) as max_id from TRANSACTION_CODES
+						  where account_number="' . $account_number . '"';
 					$result = mysqli_query($con, $query);
 
 					$num_rows = mysqli_num_rows($result);
 					if ($num_rows == 0)
-						return array('status' => false,
-							     'err_message' => 'Something went wrong');
+						$start_id = 1;
+					else
+						$row = mysqli_fetch_array($result);
+						$start_id = $row['max_id'] + 1;
 
-					$row = mysqli_fetch_array($result);
-					$codes[$i]['id'] = $row[0];
+					$codes[$i]['id'] = $start_id + $i;
+					$codes[$i]['value'] = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));
 				}
 
-				$pass = 'test';  # TODO: make it dynamic
-				mail_tancodes($codes, $email, $account_num, $pass);
+				print_debug_message('Storing tancodes...');
+				$query = 'insert into TRANSACTION_CODES (account_number, tancode_id, tancode) values';
+				for ($i = 0 ; $i < 100 ; $i++) {
+					$query .= ' ("' . $account_number . '", "' . $codes[$i]['id'] . '", "' . $codes[$i]['value'] . '")';
+					if ($i != 99)
+						$query .= ',';
+				}
+				$result = mysqli_query($con, $query);
+
+				$num_rows = mysqli_affected_rows($con);
+				if ($num_rows == 0)
+					return array('status' => false,
+						     'err_message' => 'Whoops, something went wrong while adding tancodes');
+
+				mail_tancodes($email, $codes, $account_num, $pdf_password);
+
+			} else {
+
+				$scs_password = '12345678';   # TODO: produce a random password of length 8 for scs
+
+				print_debug_message('Storing scs password...');
+				$query = 'update USERS set scs_password="' . $scs_password . '"
+					  where email="' . $email . '"';
+				$result = mysqli_query($con, $query);
+
+				$num_rows = mysqli_affected_rows($con);
+				if ($num_rows == 0)
+					return array('status' => false,
+						     'err_message' => 'Something went wrong');
+
+				mail_scs_pass($email, $scs_password, $account_num, $pdf_password);
 			}
 		}
 
@@ -876,9 +1015,9 @@ function reject_user_db($email) {
 		print_debug_message('Deleting new user...');
 		$email = mysql_real_escape_string($email);
 		$query = 'delete from USERS
-			  where email="' . $email . '" and
-			  is_employee=0 and
-			  is_approved=0';
+			  where email="' . $email . '"
+			  and is_employee=0
+			  and is_approved=0';
 		$result = mysqli_query($con, $query);
 
 		$num_rows = mysqli_affected_rows($con);

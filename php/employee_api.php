@@ -21,9 +21,6 @@ function reg_emp() {
 		return error('Invalid email format');
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
-	print_debug_message('Checking if password content is valid...');
-	if (!preg_match('/^[a-zA-Z0-9]*$/', $pass))
-		return error('Invalid password (only letters and digits are allowed)');
 	//print_debug_message('Checking if password is strong enough...');
 	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
 	//	return error('Weak password. Make sure your password is stronger.');

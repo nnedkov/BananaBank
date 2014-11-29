@@ -2,6 +2,7 @@
 
 require_once 'config.php';
 require_once 'aux_func.php';
+require_once 'common_api.php';
 require_once 'client_api.php';
 require_once 'employee_api.php';
 
@@ -15,10 +16,14 @@ else
 	$action = 'set_trans_file';
 
 switch ($action) {
+	// Common API
+	case 'recover_pass':	return recover_pass();
+	case 'change_pass':	return change_pass();
 	// Client API
 	case 'reg_client':	return reg_client(); # DONE
 	case 'login_client':	return login_client(); # DONE
 	case 'logout_client':	return logout_client(); # DONE
+	case 'download_scs_exe':	return download_scs_exe(); 
 	case 'get_account_client':	return get_account_client(); # DONE
 	case 'get_trans_client':	return get_trans_client();  # DONE
 	case 'get_trans_client_pdf':	return get_trans_client_pdf();

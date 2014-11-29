@@ -16,6 +16,7 @@ $DB_NAME = 'my_bank';
 //$DB_NAME = phpsec\confidentialString(':1cLIvEkzWViP7sz5RdTDtzBuU5rjBwK47X+rmtYUJFY=');
 
 $SESSION_DURATION = 600;   // in seconds
+$PASSREC_TOKEN_DURATION = '02:00:00';
 $SYSTEM_EMAIL = 'noreply.mybank@gmail.com';
 
 ?>

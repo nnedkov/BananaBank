@@ -8,7 +8,12 @@ CREATE TABLE IF NOT EXISTS `USERS` (
   `password` VARCHAR ( 255 ) NOT NULL,
   `is_employee` BOOLEAN NOT NULL DEFAULT 0,
   `is_approved` BOOLEAN NOT NULL DEFAULT 0,
-  `pdf` SMALLINT ( 1 ) NOT NULL DEFAULT 2,
+  `scs` BOOLEAN NOT NULL DEFAULT 0,
+  `scs_password` VARCHAR ( 8 ),
+  `pdf_password` VARCHAR ( 8 ) NOT NULL,
+  `password_token` VARCHAR ( 15 ),
+  `exp_date` TIMESTAMP,
+  `was_used` BOOLEAN,
   PRIMARY KEY (`email`)
 ) ENGINE=MYISAM;
 
@@ -16,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `USERS` (
 CREATE TABLE IF NOT EXISTS `BALANCE` (
   `account_number` INT ( 25 ) NOT NULL AUTO_INCREMENT,
   `email` VARCHAR ( 64 ) NOT NULL,
-  `balance` FLOAT ( 10 , 4 ) NOT NULL,
+  `balance` DOUBLE ( 20 , 2 ) NOT NULL,
   PRIMARY KEY (`account_number`),
   FOREIGN KEY (`email`) REFERENCES USERS(`email`)
 ) ENGINE=MYISAM;
