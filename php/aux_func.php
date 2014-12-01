@@ -201,7 +201,7 @@ function output_trans_hist_html($account_num, $trans_recs) {
 		 </head>
 		 <body>
 
-		 <img style="vertical-align: top" src="./images/BananaBankLogo2.jpg" width="80" />
+		 <img style="vertical-align: top" src="/var/www/banana_bank/html/images/BananaBankLogo2.jpg" width="80" />
 		 <h2 align="center"> Banana Bank </h2>
 
 		 <p> Transaction history of ' . $account_num . ' as of '. date('Y/m/d') . ' ' . date('h:i:s') . '<br></p>
@@ -281,6 +281,13 @@ function parse_file($filename) {
 
 function check_pass($pass) {
 	
-	preg_match($pass,[0-9]
-	
+	$uppercase = preg_match('@[A-Z]@', $password);
+	$lowercase = preg_match('@[a-z]@', $password);
+	$number    = preg_match('@[0-9]@', $password);
+
+	if(!$uppercase || !$lowercase || !$number || strlen($password) < 6)
+		return false;
+	else
+		return true;
+}
 ?>

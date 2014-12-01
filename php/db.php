@@ -1131,7 +1131,7 @@ function get_scs_string_db($email) {
 			return -1;
 
 		print_debug_message('Obtaining SCS string...');
-		// TODO: get unique string form db
+
 		$query = 'select scs_string from USERS	
 			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
@@ -1147,7 +1147,7 @@ function get_scs_string_db($email) {
 		return -3;
 	}
 
-	return $rec['scs_string'];  //TODO: Change to right parameter
+	return $rec['scs_string'];
 }
 
 function get_scs_pin_db($email){

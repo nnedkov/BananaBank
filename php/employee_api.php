@@ -2,7 +2,6 @@
 
 require_once 'aux_func.php';
 require_once 'db.php';
-require_once __DIR__ . '/../phpsec/auth/user.php';
 require_once __DIR__ . '/../phppdf/mpdf.php';
 
 
@@ -22,7 +21,7 @@ function reg_emp() {
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
 	print_debug_message('Checking if password is strong enough...');
-	if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
+	if (check_pass($pass))
 		return error('Weak password. Make sure your password is stronger.');
 
 	$res_arr = reg_emp_db($email, $pass);
@@ -215,11 +214,14 @@ function get_trans_emp_pdf() {
 	$res_arr = get_trans_emp_db($email);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
+		
+	$filename = __DIR__ . '/../downloads/' .  $res_arr['account_num']  . '.pdf';
+	shell_exec('sudo /var/www/banana_bank/bash/cleaner.sh ' . $filename);
 
 	$html = output_trans_hist_html($res_arr['account_num'], $res_arr['trans_recs']);
 	$mpdf = new mPDF();
 	$mpdf->WriteHTML($html);
-	$mpdf->Output(__DIR__ . '/../downloads/' .  $res_arr['account_num']  . '.pdf', 'F');
+	$mpdf->Output($filename, 'F');
 }
 
 function get_trans() {
@@ -358,7 +360,7 @@ function approve_user() {
 	print_debug_message('Sanitizing input...');
 	$email = sanitize_input($_POST['email']);
 	$init_balance = sanitize_input($_POST['init_balance']);
-
+	
 	print_debug_message('Checking if email format is valid...');
      	if (!filter_var($email, FILTER_VALIDATE_EMAIL))
 		return error('Invalid email format');
@@ -366,7 +368,7 @@ function approve_user() {
 		return error('Email length should be at most 64 characters');
 
 	print_debug_message('Checking if initial balance is a non-negative float...');
-	if (!filter_var($init_balance, FILTER_VALIDATE_FLOAT) || floatval($init_balance) <= 0)
+	if (!filter_var("".$init_balance, FILTER_VALIDATE_FLOAT) || floatval("".$init_balance) <= 0)
 		return error('Initial balance should be a non-negative float');
 	$init_balance = floatval($init_balance);
 

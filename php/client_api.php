@@ -2,7 +2,7 @@
 
 require_once 'aux_func.php';
 require_once 'db.php';
-require_once __DIR__ . '/../phpsec/auth/user.php';
+require_once 'config.php';
 require_once __DIR__ . '/../phppdf/mpdf.php';
 
 
@@ -25,10 +25,10 @@ function reg_client() {
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
 	print_debug_message('Checking if password is strong enough...');
-	if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < $PASSWORD_STRENGTH)
+	if (check_pass($pass))
 		return error('Weak password. Make sure your password is stronger');
 	print_debug_message('Checking if way of authenticating transactions is valid...');
-	if (!preg_match('/^[0-1]$/', $scs))
+	if (!preg_match('/^[1-2]$/', $scs))
 		return error('Invalid parameter (only 1 or 2 is allowed)');
 
 	$res_arr = reg_client_db($email, $pass, $scs);
@@ -112,20 +112,20 @@ function download_scs_exe() {
 		return error('Invalid operation for employee');
 
 	$email = $_SESSION['email'];
-	$result = get_scs_string_db($email);
-	if($result['status'] == false)
-		return error('Error in getting the ');
-	$SCSTAN = $result['scs_password'];
+	$account_num = $_SESSION['account_num'];
+	$scs_string = get_scs_string_db($email);
+	if($scs_string < 0)
+		return error('Error in getting the scs string');
 	
-	print_debug_message('Inserting SCSTAN and Building project...');
+	print_debug_message('Inserting SCS string and Building project...');
 	
-	shell_exec('sed \'/JTextField tanField/ a\        private String secret = "' . $SCSTAN . '";\' ../java/Original.java > ../java/src/BananaSCS.java');
+	shell_exec('sed \'/JTextField tanField/ a\        private String secret = "' . $scs_string . '";\' ../java/Original.java > ../java/src/BananaSCS.java');
 	shell_exec('../java/ant && ../exe/ant -f BuildSCS.xml');
+	shell_exec('mv ../exe/SCS.jar ../exe/SCS' . $account_num . '.jar');
 	
-	#TODO: download the scs.jar
 	
 	//removing temp files
-	shell_exec('rm 	../java/exe/SCS.jar && rm 	../java/src/BananaSCS.java');
+	//shell_exec('rm 	../java/exe/SCS.jar && rm 	../java/src/BananaSCS.java');
 	
 }
 
