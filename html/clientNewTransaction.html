@@ -17,7 +17,6 @@
 				<tr>
 					<td valign="top" style="padding-left:50px; padding-right:20px; padding-top:20px; padding-bottom:20px;">
 						<div class="menu"><a href="index.html">Home Page</a></div>
-						<div class="menu"><a href="employeeLogin.html">Employees</a></div>
 					</td>
 				</tr>
 				
@@ -26,6 +25,12 @@
 						<div style="padding:15px;"><img src="images/index_24.gif" width="176" height="22" alt="" /></div>
 						<div style="padding-bottom:8px;">
 						<table width="215" border="0" align="center" cellpadding="3" cellspacing="0">
+							<tr>
+								<td width="59" class="body1">Account N:</td>
+							</tr>
+							<tr>
+								<td class="body1" id="accountNumber"></td>
+							</tr>
 							<tr>
 								<td width="59" class="body1">Email:</td>
 							</tr>
@@ -87,7 +92,11 @@
 								<td><label><input type="text" name="amount" id="amount" style="width:90%;" /></label></td>
 							  </tr>
 							  <tr>
-								<td class="body3" id="tanCode"></td>
+								<td class="body3" >Description (max. 100 characters):</td>
+								<td><label><textarea name="description" rows="4" id="desc" style="width:90%;" maxlength="100"></textarea></label></td>
+							  </tr>
+							  <tr>
+								<td class="body3" id="tanCode">TAN Code:</td>
 								<td><label><input type="text" name="code" id="code" style="width:90%;" /></label></td>
 							  </tr>
 							  <tr>

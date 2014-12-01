@@ -16,17 +16,20 @@
 				</tr>
 				<tr>
 					<td valign="top" style="padding-left:50px; padding-right:20px; padding-top:20px; padding-bottom:20px;">
-						<div class="menu">Home Page</div>
-						<div class="menu">Employees</div>
+						<div class="menu"><a href="index.html">Home Page</a></div>
 					</td>
-					<!-- <div class="menu"><a href="index.html">Home Page</a></div>
-						<div class="menu"><a href="employeeLogin.html">Employees</a></div>-->
 				</tr>
 				<tr><!--User Area-->
 					<td>
 						<div style="padding:15px;"><img src="images/index_24.gif" width="176" height="22" alt="" /></div>
 						<div style="padding-bottom:8px;">
 						<table width="215" border="0" align="center" cellpadding="3" cellspacing="0">
+							<tr>
+								<td width="59" class="body1">Account N:</td>
+							</tr>
+							<tr>
+								<td class="body1" id="accountNumber"></td>
+							</tr>
 							<tr>
 								<td width="59" class="body1">Email:</td>
 							</tr>
@@ -44,6 +47,9 @@
 									<label>
 										<input type="image" name="imageField" id="logoutClient" onClick="logoutClient()" src="images/ButtonLogout.gif" />
 									</label></td>
+							</tr>
+							<tr>
+								<td><div class="body1" style="text-align:right;"><a href="passChange.html">Change Password</a></div></td>
 							</tr>
 						</table>
 						<script type="text/javascript">
@@ -76,9 +82,20 @@
 				</div>
 				<br/>
 				<br/>
-				<label>
-					<a href="clientNewTransaction.html"><input type="image" name="imageField"  src="images/ButtonNewTransaction.gif" /></a>
-				</label>
+				<table>
+					<tr>
+						<td>
+							<label>
+								<a href="clientNewTransaction.html"><input type="image" name="imageField"  src="images/ButtonNewTransaction.gif" /></a>
+							</label>
+						</td>
+						<td>
+							<label>
+								<input type="image" name="imageField" id="downloadSCS"  src="images/ButtonDownloadNewSCS.gif" />
+							</label>
+						</td>
+					</tr>
+				</table>
 				<label id="downloadButtonClient">
 					<!--<input type="image" name="imageField"  id="downloadTransactionsClient" src="images/ButtonDownloadTransactions.gif" /></a>-->
 				</label>
@@ -89,6 +106,7 @@
 							<th>ID</th>
 							<th>Destination</th>
 							<th>Amount</th>
+							<th>Description</th>
 							<th>Date</th>
 							<th>Status</th>
 						</tr>

@@ -2,6 +2,7 @@
 
 require_once 'dbconn.php';
 require_once 'aux_func.php';
+require_once '../password_compat/password.php';
 
 
 function recover_pass_db($email) {
@@ -31,7 +32,7 @@ function recover_pass_db($email) {
 				     'err_message' => 'Registration not approved yet');
 
 		print_debug_message('Producing token for the password update...');
-		$token = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));   # TODO: create random token of length 15 characters
+		$token = sha1(openssl_random_pseudo_bytes(20));
 		$query = 'update USERS set password_token="' . $token . '", exp_date=ADDTIME(now(), ' . $PASSREC_TOKEN_DURATION . '), was_used=0
 			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
@@ -121,7 +122,9 @@ function reg_client_db($email, $pass, $scs) {
 		print_debug_message('No registered user with same email exists. Inserting new user to db...');
 		$hash = password_hash($pass, PASSWORD_DEFAULT);
 		$scs = mysql_real_escape_string($scs);
-		$pdf_password = '12345';   # TODO: produce a random password of 8 characters
+		
+		// generating 8 characters random string
+		$pdf_password = base64_encode(openssl_random_pseudo_bytes(6));
 		$query = 'insert into USERS (email, password, scs, pdf_password)
 			  values ("' . $email . '", "' . $hash . '", "' . $scs . '", "' . $pdf_password . '")';
 		$result = mysqli_query($con, $query);
@@ -325,7 +328,7 @@ function get_tancode_id_db($email, $account_num) {
 		     'tancode_id' => $tancode_id);
 }
 
-function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancode_id, $tancode_value, $description) {
+function set_trans_form_db($email, $account_num_src, $account_num_dest, $amount, $tancode_id, $tancode_value, $description) {
 
 	try {
 		$con = get_dbconn();
@@ -333,24 +336,53 @@ function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancod
 			return array('status' => false,
 				     'err_message' => 'Failed to connect to database');
 
-		print_debug_message('Checking if tancode is valid...');
-		$tancode_value = mysql_real_escape_string($tancode_value);
-		$query = 'select is_used from TRANSACTION_CODES
-			  where account_number= "' . $account_num_src . '"
-			  and tancode_id="' . $tancode_id . '"
-			  and tancode="' . $tancode_value . '"';
-		$result = mysqli_query($con, $query);
+		// using TAN codes
+		if($tancode_id == 0){ 
+			print_debug_message('Checking if tancode is valid...');
+			$tancode_value = mysql_real_escape_string($tancode_value);
+			$query = 'select is_used from TRANSACTION_CODES
+				where account_number= "' . $account_num_src . '"
+				and tancode_id="' . $tancode_id . '"
+				and tancode="' . $tancode_value . '"';
+			$result = mysqli_query($con, $query);
 
-		$num_rows = mysqli_num_rows($result);
-		if ($num_rows == 0)
+			$num_rows = mysqli_num_rows($result);
+			if ($num_rows == 0)
+				return array('status' => false,
+						'err_message' => 'You entered an invalid tancode');
+
+			$row = mysqli_fetch_array($result);
+			if ($row['is_used'] != 0)
+				return array('status' => false,
+						'err_message' => 'You entered an already used tancode');
+						
+		} else { // using SCS
+		
+		if($email < 0)
 			return array('status' => false,
-				     'err_message' => 'You entered an invalid tancode');
-
-		$row = mysqli_fetch_array($result);
-		if ($row['is_used'] != 0)
+						'err_message' => 'Something went wrong while checking your account number');
+		$scs_string = get_scs_string_db($email);
+		if($scs_string < 0)
 			return array('status' => false,
-				     'err_message' => 'You entered an already used tancode');
-
+						'err_message' => 'Something went wrong while checking security parameters');
+		$scs_password = get_scs_pin_db($email);
+		if($scs_password < 0)
+			return array('status' => false,
+						'err_message' => 'Something went wrong while checking security parameters');
+		$flag = false;
+		for($i = 0 ; $i < 1001 ; $i++){
+			$hash = substr(sha1($scs_password.$amount.$account_num_dest.$scs_string.$i),0,20);
+			if($hash == $tancode_value){
+				$flag = true;
+				break;
+			}
+		}
+		if(flag == false)
+			return array('status' => false,
+						'err_message' => 'Invalid SCS Token');
+		
+		}
+		
 		$res_arr = transfer_money($account_num_src, $account_num_dest, $amount, $description, 0);
 		if ($res_arr['status'] == false)
 			return $res_arr;
@@ -376,7 +408,7 @@ function set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancod
 	return array('status' => true);
 }
 
-function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $params) {
+function set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value, $params, $file_contents) {
 
 	try {
 		$con = get_dbconn();
@@ -384,6 +416,8 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 			return array('status' => false,
 				     'err_message' => 'Failed to connect to database');
 
+		//using TAN codes
+		if($tancode_id != 0){
 		print_debug_message('Checking if tancode is valid...');
 		$tancode_value = mysql_real_escape_string($tancode_value);
 		$query = 'select is_used from TRANSACTION_CODES where
@@ -401,7 +435,32 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 		if ($row['is_used'] != 0)
 			return array('status' => false,
 				     'err_message' => 'You entered an already used tancode');
-
+		
+		} else {// using SCS
+			if($email < 0)
+				return array('status' => false,
+						'err_message' => 'Something went wrong while checking your account number');
+			$scs_string = get_scs_string_db($email);
+			if($scs_string < 0)
+				return array('status' => false,
+						'err_message' => 'Something went wrong while checking security parameters');
+			$scs_password = get_scs_pin_db($email);
+			if($scs_password < 0)
+				return array('status' => false,
+						'err_message' => 'Something went wrong while checking security parameters');
+			$flag = false;
+			for($i = 0 ; $i < 1001 ; $i++){
+				$hash = substr(sha1($scs_password.$file_contents.$scs_string.$i),0,20);
+				if(	$hash == $tancode_value){
+					$flag = true;
+					break;
+				}
+			}
+			if(flag == false)
+				return array('status' => false,
+							'err_message' => 'Invalid SCS Token');
+		}
+		
 		for ($i = 0 ; $i < count($params)-1 ; $i++) {
 
 			if (!filter_var($params[$i][1], FILTER_VALIDATE_FLOAT) || floatval($params[$i][1]) <= 0)
@@ -417,16 +476,17 @@ function set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $param
 				return $res_arr;
 		}
 
-		$query = 'update TRANSACTION_CODES set is_used=1
+		if($tancode_id != 0){
+			$query = 'update TRANSACTION_CODES set is_used=1
 			  where account_number="' . $account_num_src . '"
 			  and tancode_id="' . $tancode_id .'"';
-		$result = mysqli_query($con, $query);
+			$result	= mysqli_query($con, $query);
 
-		$num_rows = mysqli_affected_rows($con);
-		if ($num_rows == 0)
-			return array('status' => false,
-				     'err_message' => "Code wasn't set to used");
-
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0)
+				return array('status' => false,
+						'err_message' => "Code wasn't set to used");
+		}
 		close_dbconn($con);
 
 	} catch (Exception $e) {
@@ -925,7 +985,7 @@ function approve_user_db($email, $init_balance) {
 			$num_rows = mysqli_affected_rows($con);
 			if ($num_rows == 0)
 				return array('status' => false,
-					     'err_message' => "Couldn't set initial balance. Please try again");
+					     'err_message' => 'Couldn\'t set initial balance. Please try again');
 
 			print_debug_message('Obtaining account number of user...');
 			$query = 'select LAST_INSERT_ID()';
@@ -935,10 +995,33 @@ function approve_user_db($email, $init_balance) {
 			if ($num_rows == 0)
 				return array('status' => false,
 					     'err_message' => 'Something went wrong');
-
+			
 			$row = mysqli_fetch_array($result);
 			$account_num = $row[0];
-
+			
+			/*
+			// Making account number resemble normal banking systems with 9 digits
+			$digits = strlen(strval($account_num));
+			$missing_digits = 9 - $digits;
+			$trailer = rand(pow(10, $missing_digits-1), pow(10, $missing_digits)-1);
+			$new_account_num = intval(strval($account_num) . strval($trailer)); 
+			$query = 'update BALANCE set account_number = ' . $new_account_num . '
+			  where account_number="' . $account_num . '"';
+			$result = mysqli_query($con, $query);
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0)
+				return array('status' => false,
+						'err_message' => 'Non existing user with the specified email');
+			
+			$query = 'alter table BALANCE AUTO_INCREMENT='.$account_num;
+			$result = mysqli_query($con, $query);
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0)
+				return array('status' => false,
+						'err_message' => 'Non existing user with the specified email');
+						
+			*/
+			
 			if ($scs == 0) {
 
 				$codes = array();
@@ -977,10 +1060,14 @@ function approve_user_db($email, $init_balance) {
 
 			} else {
 
-				$scs_password = '12345678';   # TODO: produce a random password of length 8 for scs
-
-				print_debug_message('Storing scs password...');
-				$query = 'update USERS set scs_password="' . $scs_password . '"
+				//generating a random 6 digit SCS PIN
+				$scs_password = rand(pow(10, 5), pow(10, 6)-1);
+	
+				//generating a random 15 character unique string for SCS
+				$scs_string = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));
+				
+				print_debug_message('Storing scs string...');
+				$query = 'update USERS set scs_string="' . $scs_string . '"
 					  where email="' . $email . '"';
 				$result = mysqli_query($con, $query);
 
@@ -1035,5 +1122,58 @@ function reject_user_db($email) {
 
 	return array('status' => true);
 }
+	
+function get_scs_string_db($email) {
+	
+	try {
+		$con = get_dbconn();
+		if ($con == null)
+			return -1;
 
+		print_debug_message('Obtaining SCS string...');
+		// TODO: get unique string form db
+		$query = 'select scs_string from USERS	
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+		$num_rows = mysqli_num_rows($result);
+			if ($num_rows == 0)
+				return -2;	
+
+		$rec = mysqli_fetch_array($result);
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return -3;
+	}
+
+	return $rec['scs_string'];  //TODO: Change to right parameter
+}
+
+function get_scs_pin_db($email){
+	
+	try {
+		$con = get_dbconn();
+		if ($con == null)
+			return -1;
+
+		print_debug_message('Obtaining SCS PIN...');
+		$query = 'select scs_password from USERS
+			  where email="' . $email . '"';
+		$result = mysqli_query($con, $query);
+		$num_rows = mysqli_num_rows($result);
+			if ($num_rows == 0)
+				return -2;	
+
+		$rec = mysqli_fetch_array($result);
+		close_dbconn($con);
+
+	} catch (Exception $e) {
+		print_debug_message('Exception occured: ' . $e->getMessage());
+		return -3;
+	}
+
+	return $rec['scs_password'];
+	
+}
 ?>

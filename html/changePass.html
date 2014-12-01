@@ -17,7 +17,6 @@
   <tr>
     <td valign="top" style="padding-left:50px; padding-right:20px; padding-top:20px; padding-bottom:20px;">
 	<div class="menu"><a href="index.html">Home Page</a></div>
-	<div class="menu"><a href="employeeLogin.html">Employees</a></div>
 	</td>
   </tr>
   
@@ -39,46 +38,34 @@
 	</td>
     <td width="550" valign="top" bgcolor="#7F4F20"><!--CENTER-->
 		<div><img src="images/BananaBankLogo2.gif" width="320" height="333" alt="" /></div>
-		<div class="body2" style="padding-top:15px;">Welcome
-		<label>
-                          <input type="image" name="imageField" onClick="logoutEmployee()" src="images/ButtonLogout.gif" />
-                        </label>
+		<div class="body1" style="padding-top:15px;">Please enter your new password<br />
 		</div>
-		<br/>
-		<br/>
-		<div class="body2" style="padding-top:15px;">Client</div>
 		<div>
-			<table class="tables" id="tablesAccount">
-				<tr>
-					<th>Email</th>
-					<th>Balance</th>
-					<th>Account N</th>
-				</tr>
-				<!--<script type="text/javascript">
-				setFileToDownloadEmp();
-				accountDetails();
-				</script>-->
-		  </table>		
-		</div>
-		<div class="body2" id="transactions" style="padding-top:15px;"></div>
-		<!--<label id="transactions">
-					<!--<input type="image" name="imageField"  id="downloadTransactionsClient" src="images/ButtonDownloadTransactions.gif" /></a>
-				</label>-->
-		<div>
-			<table class="tables" id="tablesTransOfAccount">
-				<tr>
-					<th>ID</th>
-					<th>Destination</th>
-					<th>Amount</th>
-					<th>Description</th>
-					<th>Date</th>
-					<th>Action</th>
-				</tr>
-				<script type="text/javascript">
-				setFileToDownloadEmp();
-				accountDetails();
-				transactionsEmployee();
-				</script>
+			<table width="224" border="0" align="left" cellpadding="4" cellspacing="0">
+			  <tr>
+				<td>
+				<div style="padding-bottom:8px;">
+				  <form id="form1" name="form1" method="post" action="" style="margin:auto;">
+				    <table width="215" border="0" align="center" cellpadding="3" cellspacing="0">
+                      <tr>
+                        <td class="body3">Password:</td>
+                        <td><label><input type="password" name="pwd" id="RRpwd" style="width:90%;" /></label></td>
+                      </tr>
+					  <tr>
+                        <td class="body3">Confirm Password:</td>
+                        <td><label><input type="password" name="pwdRep" id="RRpwdRep" style="width:90%;" /></label></td>
+                      </tr>
+                        <td colspan="2" align="right" class="field" style="padding-right:12px;">
+						
+                          <label>
+                          <input type="image" name="imageField" id="sendNewPass" src="images/ButtonSend.gif" />
+                        </label></td>
+                      </tr>
+                    </table>
+				  </form>
+				  </div>
+				</td>
+			  </tr>
 		  </table>		
 		</div>
 	</td>

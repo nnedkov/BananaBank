@@ -2,7 +2,7 @@
 
 require_once 'aux_func.php';
 require_once 'db.php';
-//require_once __DIR__ . '/../phpsec/auth/user.php';
+require_once __DIR__ . '/../phpsec/auth/user.php';
 require_once __DIR__ . '/../phppdf/mpdf.php';
 
 
@@ -21,9 +21,9 @@ function reg_emp() {
 		return error('Invalid email format');
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
-	//print_debug_message('Checking if password is strong enough...');
-	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
-	//	return error('Weak password. Make sure your password is stronger.');
+	print_debug_message('Checking if password is strong enough...');
+	if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
+		return error('Weak password. Make sure your password is stronger.');
 
 	$res_arr = reg_emp_db($email, $pass);
 	if ($res_arr['status'] == false)

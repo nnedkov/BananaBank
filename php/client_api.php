@@ -2,7 +2,7 @@
 
 require_once 'aux_func.php';
 require_once 'db.php';
-//require_once __DIR__ . '/../phpsec/auth/user.php';
+require_once __DIR__ . '/../phpsec/auth/user.php';
 require_once __DIR__ . '/../phppdf/mpdf.php';
 
 
@@ -24,9 +24,9 @@ function reg_client() {
 		return error('Invalid email format');
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
-	//print_debug_message('Checking if password is strong enough...');
-	//if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < 0.4)
-	//	return error('Weak password. Make sure your password is stronger');
+	print_debug_message('Checking if password is strong enough...');
+	if (strlen($pass) < 6 || phpsec\BasicPasswordManagement.strength($pass) < $PASSWORD_STRENGTH)
+		return error('Weak password. Make sure your password is stronger');
 	print_debug_message('Checking if way of authenticating transactions is valid...');
 	if (!preg_match('/^[0-1]$/', $scs))
 		return error('Invalid parameter (only 1 or 2 is allowed)');
@@ -111,7 +111,22 @@ function download_scs_exe() {
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
 
-	# TODO: send the scs.exe
+	$email = $_SESSION['email'];
+	$result = get_scs_string_db($email);
+	if($result['status'] == false)
+		return error('Error in getting the ');
+	$SCSTAN = $result['scs_password'];
+	
+	print_debug_message('Inserting SCSTAN and Building project...');
+	
+	shell_exec('sed \'/JTextField tanField/ a\        private String secret = "' . $SCSTAN . '";\' ../java/Original.java > ../java/src/BananaSCS.java');
+	shell_exec('../java/ant && ../exe/ant -f BuildSCS.xml');
+	
+	#TODO: download the scs.jar
+	
+	//removing temp files
+	shell_exec('rm 	../java/exe/SCS.jar && rm 	../java/src/BananaSCS.java');
+	
 }
 
 function get_account_client() {
@@ -224,6 +239,7 @@ function set_trans_form() {
 	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
 	$res_arr = is_valid_session();
+	
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
@@ -235,8 +251,7 @@ function set_trans_form() {
 
 	$account_num_src = $_SESSION['account_num'];
 	$tancode_id = $_SESSION['tan_code_id'];
-	# TODO: if ($tancode_id == 0) it means that the user has registered for SCS use
-	#	and therefore we will need to follow a different workflow that the one below
+	$email = $_SESSION['email'];
 
 	print_debug_message('Checking if parameters are set...');
 	if (empty($_POST['account_num_dest']))
@@ -261,15 +276,21 @@ function set_trans_form() {
 		return error('Invalid amount');
 	$amount = floatval($amount);
 
-	if (strlen($tancode_value) != 15)
-		return error('Tancode length should be 15');
-
 	if (strlen($description) == 0)
 		return error('Please provide description for the transaction');
-	if (strlen($description) > 120)
-		return error('Description length should be at most 120 characters');
+	if (strlen($description) > 100)
+		return error('Description length should be at most 100 characters');
 
-	$res_arr = set_trans_form_db($account_num_src, $account_num_dest, $amount, $tancode_id, $tancode_value, $description);
+	if ($tancode_id == 0){ // USE SCS instead
+	if (strlen($tancode_value) != 20)
+		return error('SCS token length should be 20');
+
+	} else {
+	if (strlen($tancode_value) != 15)
+		return error('Tancode length should be 15');
+	}
+
+	$res_arr = set_trans_form_db($email, $account_num_src, $account_num_dest, $amount, $tancode_id, $tancode_value, $description);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
@@ -296,6 +317,7 @@ function set_trans_file() {
 	if (empty($_SESSION['tan_code_id']))
 		return error('No tancode ID stored in the session');
 
+	$email = $_SESSION['email'];
 	$account_num_src = $_SESSION['account_num'];
 	$tancode_id = $_SESSION['tan_code_id'];
 
@@ -303,24 +325,41 @@ function set_trans_file() {
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
+	//getting parsed file contents
 	$params = parse_file($filename);
 	if($params == false)
 		return error('Uploaded file does not comply with rules');
+	
+	// checking last line (TAN or SCS token)
 	end($params);
 	$value = current($params);
 
 	if (count($value) != 1)
-		return error('Uploaded file does not comply with rules. Last line should have only TAN code');
+		return error('Uploaded file does not comply with rules. Last line should have only TAN code or SCS token');
 
-	$tancode_value = sanitize_input($value[0]);
-
-	if (strlen($value[0]) != 15)
-		return error('TAN code entered is not 15 characters');
-
-	$res_arr = set_trans_file_db($account_num_src, $tancode_id, $tancode_value, $params);
-	if ($res_arr['status'] == false)
-		return error($res_arr['err_message']);
-
+	// using TAN 
+	if($tancode_id != 0){
+		
+		$tancode_value = sanitize_input($value[0]);
+		if (strlen($tancode_value != 15))
+			return error('Check TAN code length');
+	
+		$res_arr = set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value, $params, 0);
+		if ($res_arr['status'] == false)
+			return error($res_arr['err_message']);
+	} else {
+		
+		$scs_token = sanitize_input($value[0]);
+		if (strlen($scs_token != 20))
+			return error('Check SCS Token length');
+			
+		//getting file contents from first elements and removing it from array
+		$file_contents = array_shift($params);
+		
+		$res_arr = set_trans_file_db($email, $account_num_src, $tancode_id, $scs_token, $params, $file_contents);
+		if ($res_arr['status'] == false)
+			return error($res_arr['err_message']);
+	}
 	unset($_SESSION['tan_code_id']);
 	session_write_close();
 

@@ -79,6 +79,10 @@ color:#fff;
 color:#000;
 background-color:#EAF2D3;
 }
+textarea[name=description] {
+    resize: none;
+	overflow: hidden;
+}
 
 .body1 a{ color:#ffffff; text-decoration:none; }
 .body1 a:hover{ color:#000000; text-decoration:underline; }

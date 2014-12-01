@@ -36,6 +36,7 @@ CREATE TABLE `BALANCE` (
 ) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+ALTER TABLE BALANCE AUTO_INCREMENT = 1;
 --
 -- Dumping data for table `BALANCE`
 --

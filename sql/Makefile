@@ -5,7 +5,7 @@
 #############################
 
 DB_USER = root
-DB_PASS = root
+DB_PASS = alpha12
 
 
 create_db:

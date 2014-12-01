@@ -89,7 +89,7 @@ function mail_tancodes($to, $codes, $account_num, $pdf_password) {
 	$mpdf = new mPDF();
 	$mpdf->SetProtection(array('copy', 'print'), $pdf_password);
 	$mpdf->WriteHTML($content);
-	$filename = __DIR__ . '/../downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
+	$filename = '/var/www/banana_bank/downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
 	$mpdf->Output($filename, 'F');
 
 	$subject = 'Your TAN codes';
@@ -103,7 +103,34 @@ function mail_tancodes($to, $codes, $account_num, $pdf_password) {
 }
 
 function mail_scs_pass($email, $scs_password, $account_num, $pdf_password) {
-	# TODO: send password protected pdf with scs password inside
+	
+	$content = '<!DOCTYPE html>
+		    <html>
+		    <body>
+
+		    <h2 align="center"> Banana Bank </h2>
+
+		    <p>We would like to welcome you to our family. The Banana Bank family!</p>
+		    <p> At Banana Bank, we care about the safety of your bananas. That\'s why we have sent you an SCS PIN that you can use to make sure that nobody can access your bananas except you!
+                    Keep this PIN safe, and don\'t share it with anyone! You will be asked to enter it when using your SCS application.</p>
+			<p> Your SCS PIN: </p>';
+			
+	$content = $content . $scs_password;
+	$mpdf = new mPDF();
+	$mpdf->SetProtection(array('copy', 'print'), $pdf_password);
+	$mpdf->WriteHTML($content);
+	$filename = '/var/www/banana_bank/downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
+	$mpdf->Output($filename, 'F');
+
+	$subject = 'Your TAN codes';
+
+	$body = 'Attached is the TAN codes for your bank account, please use the password we provided you to open it.';
+
+	shell_exec('echo "' . $body . '" | mutt -s "' . $subject . '" -a "' . $filename . '" -- "' . $to . '"');
+	
+	//unlink($filename);
+
+	return;
 }
 
 function mail_reject_account($to) {
@@ -207,7 +234,7 @@ function output_trans_hist_html($account_num, $trans_recs) {
 
 function upload_file() {
 
-	if ($_FILES['uploadFile']['size'] > 500)
+	if ($_FILES['uploadFile']['size'] > 2000)
 	    return array('status' => false,
 			 'err_message' => 'Sorry, your file is too large');
 
@@ -216,7 +243,7 @@ function upload_file() {
 			 'err_message' => 'Sorry, only text files are allowed');
 
 	$name = sanitize_input($_FILES['uploadFile']['name']);
-	$target = __DIR__ . '/../uploads/' . $name;
+	$target = '/var/www/banana_bank/uploads/' . $name;
 
 	if (move_uploaded_file($_FILES['uploadFile']['tmp_name'], $target))
 		print_debug_message('The file ' . basename($_FILES['uploadFile']['name']) . ' has been uploaded.');
@@ -230,16 +257,21 @@ function upload_file() {
 
 function parse_file($filename) {
 
-	print_debug_message('Parsing file ' . $res_arr['filename'] . '...');
-        $handle = popen('../exe/set_trans_file ' . $filename, 'r');
-
+	print_debug_message('Parsing file ' . $filename . '...');
+    $handle = popen('../exe/set_trans_file ' . $filename, 'r');
+    
+    //getting contents of file (except scs_token) in case it needs to be hashed for SCS
+    $lines = file($filename);
+    $contents = '';
+	for($i = 0 ; $i < count($lines)-1 ; $i++)
+		$contents .= $lines[$i];
+	
 	$params = array();
+	array_push($params, $contents);
 	while ($s = fgets($handle)) {
 		if (ord($s) == 32) // check if line is empty
 			break;
 		$words = str_word_count($s, 1, '1234567890');
-		if(count($words) != 3)
-			return false;
 		array_push($params, $words);
 	}
 	pclose($handle);
@@ -247,4 +279,8 @@ function parse_file($filename) {
 	return $params;
 }
 
+function check_pass($pass) {
+	
+	preg_match($pass,[0-9]
+	
 ?>

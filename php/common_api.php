@@ -2,7 +2,7 @@
 
 require_once 'aux_func.php';
 require_once 'db.php';
-//require_once __DIR__ . '/../phpsec/auth/user.php';
+require_once __DIR__ . '/../phpsec/auth/user.php';
 
 
 function recover_pass() {
@@ -47,9 +47,9 @@ function change_pass() {
 	print_debug_message('Checking if token format is valid...');
      	if (strlen($token) != 15)
 		return error('Token length should be 15 characters');
-	//print_debug_message('Checking if password is strong enough...');
-	//if (strlen($new_pass) < 6 || phpsec\BasicPasswordManagement.strength($new_pass) < 0.4)
-	//	return error('Weak password. Make sure your password is stronger');
+	print_debug_message('Checking if password is strong enough...');
+	if (strlen($new_pass) < 6 || phpsec\BasicPasswordManagement.strength($new_pass) < 0.4)
+		return error('Weak password. Make sure your password is stronger');
 
 	$res_arr = change_pass_db($token, $new_pass);
 	if ($res_arr['status'] == false)

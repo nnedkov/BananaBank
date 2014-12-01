@@ -1,8 +1,8 @@
 
-var requestUrl = "serve_requests.php";
+var requestUrl = "../php/serve_requests.php";
 //CLIENT
 
-
+//LOGIN CLIENT
 $(document).ready(function(){
 	$("#loginClient").click(function(event){
 		event.preventDefault();
@@ -21,13 +21,14 @@ $(document).ready(function(){
         }
     });
 });
-
+//REGISTER CLIENT
 $(document).ready(function(){
 	$("#registerClient").click(function(event){
 		event.preventDefault();
 		var email = document.getElementById("Remail").value;
         var pwd = document.getElementById("Rpwd").value;
         var pwdRep = document.getElementById("RpwdRep").value;
+		var scs = "0";
         
 		if (email=="")
 		{
@@ -41,7 +42,8 @@ $(document).ready(function(){
 		}
         if (pwd==pwdRep)
         {
-            var data = "action=reg_client&email="+email+"&pass="+pwd;
+            document.form1.Method[0].checked?scs="0":scs="1";
+			var data = "action=reg_client&email="+email+"&pass="+pwd+"&scs="+scs;
             $.post(requestUrl, data, statusRegisterClient, "json");
         }
 		else
@@ -54,7 +56,7 @@ $(document).ready(function(){
         {
             if (resp.status=="true")//TODO
             {
-                alert("Thank you for registering! We will send your transaction codes to your email once your registration is approved.");
+                alert("Thank you for registering! We will send your transaction codes to your email once your registration is approved. Your password for TAN list is: "+ resp.pdf_password + " Do not forget it!");
 				window.open("index.html", "_self");
             } else {
 		alert(resp.message);
@@ -62,7 +64,7 @@ $(document).ready(function(){
         }
     });
 });
-
+//LOGOUT CLIENT
 function logoutClient()
 {
     $(function(){
@@ -75,7 +77,7 @@ function logoutClient()
         }
     });
 }
-
+//GET ACCOUNT CLIENT
 function getAccountClient()
 {
     $(function(){ 
@@ -87,16 +89,17 @@ function getAccountClient()
             if (resp.status=="true")
             {
                 document.getElementById("accountEmail").innerHTML=resp.email; 
-		document.getElementById("accountBalance").innerHTML=resp.balance; 
-		var downLink = "<a href='../downloads/"+resp.email+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
-		document.getElementById("downloadButtonClient").innerHTML=downLink; 
+				document.getElementById("accountBalance").innerHTML=resp.balance; 
+				document.getElementById("accountNumber").innerHTML=resp.account_number;
+				var downLink = "<a href='../downloads/"+resp.email+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
+				document.getElementById("downloadButtonClient").innerHTML=downLink; 
             } else {
 		alert(resp.message);
 	    }
         }
     });
 }
-
+//GET HISTORY CLIENT
 function getHistoryClient()
 {
     $(function(){
@@ -116,7 +119,8 @@ function getHistoryClient()
 					row.append($("<td>" + value[1] + "</td>"));
 					row.append($("<td>" + value[2] + "</td>"));
 					row.append($("<td>" + value[3] + "</td>"));
-					if (value[4]=="1")
+					row.append($("<td>" + value[4] + "</td>"));
+					if (value[5]=="1")
 					{
 						row.append($("<td><img src='images/approved.gif' width='65' height='20' alt='' /></td>"));
 					}
@@ -134,21 +138,26 @@ function getHistoryClient()
         }
     });
 }   
-
+//NEW TRANSACTION CLIENT
 $(document).ready(function(){
 	$("#newTransactionClient").click(function(event){
       event.preventDefault();
 	  var dest = document.getElementById('Demail').value;
         var amount = document.getElementById('amount').value;
         var tancode_value = document.getElementById('code').value;
-        var data = "action=set_trans_form&email_dest="+dest+"&amount="+amount+"&tancode_value="+tancode_value;
-        $.post(requestUrl, data, success, "json");
-        
+		var description = document.getElementById('desc').value;
+		
+		if (description.length <= 100){
+			var data = "action=set_trans_form&account_num_dest="+dest+"&amount="+amount+"&tancode_value="+tancode_value+"&description="+description;
+			$.post(requestUrl, data, success, "json");
+        }else{
+			alert("GO HOME, DIRTY HACKER!");
+		}
         function success (resp)
         {
             if (resp.status=="true")
             {
-                alert("Transaction was submitted. If the amount you transfered is larger than 10.000 Bananas, wait for approval!");
+                alert("Transaction was submitted. If the amount your transfer is larger than 10.000 Bananas, wait for approval!");
 				window.open("clientInitial.html", "_self");
             }else {
 		alert(resp.message);
@@ -157,6 +166,25 @@ $(document).ready(function(){
     });
 });
 
+
+//DOWNLOAD SCS
+$(document).ready(function(){
+	$("#downloadSCS").click(function(event){
+		event.preventDefault();
+        var data = "action=download_scs_exe";
+        $.post(requestUrl, data, success, "json");
+        function success(resp)
+        {
+            if (resp.status=="true")//TODO
+            {
+				//window.open("clientInitial.html", "_self");
+            } else {
+		alert(resp.message);
+	    }
+        }
+    });
+});
+//GET TAN CODE CLIENT
 function getTancode()
 {
     $(function(){ 
@@ -166,14 +194,19 @@ function getTancode()
         {
             if (resp.status=="true")
             {
-				document.getElementById("tanCode").innerHTML="TAN N: "+resp.tan_code_id;
+				if (resp.tan_code_id!="0"){
+					document.getElementById("tanCode").innerHTML="TAN N: "+resp.tan_code_id;// if zero = SCS
+				}else{
+					document.getElementById("tanCode").innerHTML="TAN from SCS:"	
+				}
+				
             } else {
 	      alert(resp.message);
 	    }
         }
     });
 }
-
+//GET PDF CLIENT
 function setFileToDownload()
 {
   $(function(){    
@@ -190,7 +223,7 @@ function setFileToDownload()
         }
     });
 }
-
+//NEW FILE TRANSACTION CLIENT
 $(document).ready(function(){
 	$("#newFileTransactionClient").click(function(event){
       event.preventDefault();
@@ -242,7 +275,7 @@ function uploadDone() { //Function will be called when iframe is loaded
 		alert("Upload Failed: " + data.failure);
 	}	
 }
-
+//DOWNLOAD PDF CLIENT
 $(document).ready(function(){
 	$("#downloadTransactionsClient").click(function(event){
 		event.preventDefault();
@@ -261,6 +294,8 @@ $(document).ready(function(){
 });
 
 //EMPLOYEE
+
+//LOGIN EMPLOYEE
 $(document).ready(function(){
 	$("#loginEmployee").click(function(event){
       event.preventDefault();
@@ -280,7 +315,7 @@ $(document).ready(function(){
         }
     });
 });
-
+//REGISTER EMPLOYEE
 $(document).ready(function(){
 	$("#registerEmployee").click(function(event){
       event.preventDefault();
@@ -310,7 +345,7 @@ $(document).ready(function(){
         }
     });
 });
-
+//LOGOUT EMPLOYEE
 function logoutEmployee()
 {
     $(function(){
@@ -323,7 +358,7 @@ function logoutEmployee()
         }
     });
 }
-
+//PENDING TRANSACTIONS EMPLOYEE
 function newTransactionsEmployee()
 {
 	$(function(){  
@@ -344,6 +379,7 @@ function newTransactionsEmployee()
 					row.append($("<td>" + value[2] + "</td>"));
 					row.append($("<td>" + value[3] + "</td>"));
 					row.append($("<td>" + value[4] + "</td>"));
+					row.append($("<td>" + value[5] + "</td>"));
 					row.append($("<td><input type='image' id='newTransYes"+(index+1)+"' onClick='approveTrans(this.id)' src='images/yes.gif' width='25' height='25' alt='' style='padding-right:10px;'/><input type='image' id='newTransNo"+(index+1)+"' onClick='rejectTrans(this.id)' src='images/no.gif' width='25' height='25' alt='' /></td>"));
                 });
             } else {
@@ -353,7 +389,7 @@ function newTransactionsEmployee()
         }
     });
 }
-
+//APPROVE TRANS EMP
 function approveTrans(id)
 {
 	$(function(){  
@@ -377,7 +413,7 @@ function approveTrans(id)
 			else{alert(resp.message);}
         }
     });
-}
+}//REJECT TRANS EMP
 function rejectTrans(id)
 {
 	$(function(){  
@@ -401,7 +437,7 @@ function rejectTrans(id)
         }
     });
 }
-
+//PENDING REG EMP
 function newRegistrationsEmployee()
 {
     $(function(){  
@@ -418,6 +454,7 @@ function newRegistrationsEmployee()
                     $("#tablesReg").append(row);
 					row.append($("<td>" + value[0] + "</td>"));
 					row.append($("<td>" + value[1] + "</td>"));
+					row.append($("<td><label><input type='text' name='balance' id='balance' style='width:90%;' /></label></td>"));
 					row.append($("<td><input type='image' id='newRegYes"+(index+1)+"' onClick='approveReg(this.id)' src='images/yes.gif' width='25' height='25' alt='' style='padding-right:10px;'/><input type='image' id='newRegNo"+(index+1)+"' onClick='rejectReg(this.id)' src='images/no.gif' width='25' height='25' alt='' /></td>"));
                 });
             } else {
@@ -426,7 +463,7 @@ function newRegistrationsEmployee()
         }
     });
 }
-
+//APPROVE REG EMP
 function approveReg(id)
 {
 	$(function(){  
@@ -436,6 +473,7 @@ function approveReg(id)
 		var rowId = id.slice(-1);
 		var row = table.rows[rowId];
 		var text = row.cells[0].innerHTML;
+		var balance = row.cells[2].value;
 		var data = "action=approve_user&email="+text;
         $.post(requestUrl, data, success, "json");
         
@@ -450,6 +488,7 @@ function approveReg(id)
         }
     });
 }
+//REJECT REG EMP
 function rejectReg(id)
 {
 	$(function(){  
@@ -473,7 +512,7 @@ function rejectReg(id)
         }
     });
 }
-
+//ALL USERS EMP
 function allUsers()
 {
 	$(function(){  
@@ -495,7 +534,7 @@ function allUsers()
         }
     });
 }
-
+//USER DETAILS EMP
 function userDetails(id)
 {
 		var table = document.getElementById("tablesClients");
@@ -505,7 +544,7 @@ function userDetails(id)
 		localStorage.setItem('_email', text);
 		window.open("employeeViewClient.html", "_self");
 }
-
+//ACCOUNT DETAILS EMP
 function accountDetails()
 {
 	$(function(){  
@@ -521,6 +560,7 @@ function accountDetails()
                     $("#tablesAccount").append(row);
 					row.append($("<td>" + email + "</td>"));
 					row.append($("<td>" + resp.balance + "</td>"));
+					row.append($("<td>" + resp.account_number + "</td>"));
 					 
 		var downLink = "Transactions <a href='../downloads/"+email+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
 		document.getElementById("transactions").innerHTML=downLink; 
@@ -529,7 +569,7 @@ function accountDetails()
     });
 	
 }
-
+//DOWNLOAD FILE EMP
 function setFileToDownloadEmp()
 {
   $(function(){    
@@ -547,7 +587,7 @@ function setFileToDownloadEmp()
         }
     });
 }
-
+//ALL TRANSACTIONS EMP
 function transactionsEmployee()
 {
 	$(function(){  
@@ -567,7 +607,8 @@ function transactionsEmployee()
 					row.append($("<td>" + value[1] + "</td>"));
 					row.append($("<td>" + value[2] + "</td>"));
 					row.append($("<td>" + value[3] + "</td>"));
-					if (value[4]=="1")
+					row.append($("<td>" + value[4] + "</td>"));
+					if (value[5]=="1")
 					{
 						row.append($("<td><img src='images/approved.gif' width='65' height='20' alt='' /></td>"));
 					}
@@ -582,6 +623,36 @@ function transactionsEmployee()
 }
 
 //SHARED
+
+//CHANGE PASS
+$(document).ready(function(){
+	$("#sendNewPass").click(function(event){
+		event.preventDefault();
+		var token = location.search.split('token=')[1];
+        var pwd = document.getElementById('RRpwd').value;
+		var pwdC = document.getElementById ('RRpwdRep').value;
+		
+		if (pwd!=pwdC){
+		
+			var data = "action=change_pass&token="+token+"&new_pass="+pwd;
+			$.post(requestUrl, data, success, "json");
+		}else{
+			alert("Password confirmation is wrong!");
+		}
+		
+        function success(resp)
+        {
+            if (resp.status=="true")//TODO
+            {
+				alert("Done! Now you can log in with your new password!");
+				window.open("index.html", "_self");
+            } else {
+		alert(resp.message);
+	    }
+        }
+    });
+});
+
 function getParam(sParamName)
 {
     var Params = location.search.substring(1).split("&amp;");

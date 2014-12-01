@@ -9,9 +9,10 @@ CREATE TABLE IF NOT EXISTS `USERS` (
   `is_employee` BOOLEAN NOT NULL DEFAULT 0,
   `is_approved` BOOLEAN NOT NULL DEFAULT 0,
   `scs` BOOLEAN NOT NULL DEFAULT 0,
-  `scs_password` VARCHAR ( 8 ),
+  `scs_password` VARCHAR ( 6 ),
+  `scs_string` VARCHAR ( 15 ),
   `pdf_password` VARCHAR ( 8 ) NOT NULL,
-  `password_token` VARCHAR ( 15 ),
+  `password_token` VARCHAR ( 45 ),
   `exp_date` TIMESTAMP,
   `was_used` BOOLEAN,
   PRIMARY KEY (`email`)
