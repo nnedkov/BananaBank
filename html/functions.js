@@ -28,7 +28,7 @@ $(document).ready(function(){
 		var email = document.getElementById("Remail").value;
         var pwd = document.getElementById("Rpwd").value;
         var pwdRep = document.getElementById("RpwdRep").value;
-		var scs = "0";
+		var scs = "1";
         
 		if (email=="")
 		{
@@ -42,7 +42,7 @@ $(document).ready(function(){
 		}
         if (pwd==pwdRep)
         {
-            document.form1.Method[0].checked?scs="0":scs="1";
+            document.form1.Method[0].checked?scs="1":scs="2";
 			var data = "action=reg_client&email="+email+"&pass="+pwd+"&scs="+scs;
             $.post(requestUrl, data, statusRegisterClient, "json");
         }
@@ -56,7 +56,11 @@ $(document).ready(function(){
         {
             if (resp.status=="true")//TODO
             {
-                alert("Thank you for registering! We will send your transaction codes to your email once your registration is approved. Your password for TAN list is: "+ resp.pdf_password + " Do not forget it!");
+				if(scs=="1"){
+					alert("Thank you for registering! We will send your transaction codes to your email once your registration is approved. Your password for the pdf is: "+ resp.pdf_password + " Do not forget it!");
+				}else{
+					alert("Thank you for registering! We will send your SCS PIN to your email once your registration is approved. Your password for the pdf is: "+ resp.pdf_password + " Do not forget it!");
+				}
 				window.open("index.html", "_self");
             } else {
 		alert(resp.message);
@@ -91,8 +95,10 @@ function getAccountClient()
                 document.getElementById("accountEmail").innerHTML=resp.email; 
 				document.getElementById("accountBalance").innerHTML=resp.balance; 
 				document.getElementById("accountNumber").innerHTML=resp.account_number;
-				var downLink = "<a href='../downloads/"+resp.email+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
+				var downLink = "<a href='../downloads/"+resp.account_number+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
 				document.getElementById("downloadButtonClient").innerHTML=downLink; 
+				var scsLink = "<a href='../exe/SCS"+resp.account_number+".jar' target='_blank'><img src='images/ButtonDownloadNewSCS.gif'/></a>";
+				document.getElementById("downloadSCS").innerHTML=scsLink;
             } else {
 		alert(resp.message);
 	    }
@@ -168,22 +174,22 @@ $(document).ready(function(){
 
 
 //DOWNLOAD SCS
-$(document).ready(function(){
-	$("#downloadSCS").click(function(event){
-		event.preventDefault();
-        var data = "action=download_scs_exe";
+function setSCSToDownload()
+{
+  $(function(){    
+    var data = "action=download_scs_exe";
         $.post(requestUrl, data, success, "json");
-        function success(resp)
+        function success (resp)
         {
-            if (resp.status=="true")//TODO
+            if (resp.status=="true")
             {
-				//window.open("clientInitial.html", "_self");
+				
             } else {
-		alert(resp.message);
+	      alert(resp.message);
 	    }
         }
     });
-});
+}
 //GET TAN CODE CLIENT
 function getTancode()
 {
@@ -454,7 +460,7 @@ function newRegistrationsEmployee()
                     $("#tablesReg").append(row);
 					row.append($("<td>" + value[0] + "</td>"));
 					row.append($("<td>" + value[1] + "</td>"));
-					row.append($("<td><label><input type='text' name='balance' id='balance' style='width:90%;' /></label></td>"));
+					row.append($("<td><input type='text' name='balance' id='balance' style='width:90%;' /></td>"));
 					row.append($("<td><input type='image' id='newRegYes"+(index+1)+"' onClick='approveReg(this.id)' src='images/yes.gif' width='25' height='25' alt='' style='padding-right:10px;'/><input type='image' id='newRegNo"+(index+1)+"' onClick='rejectReg(this.id)' src='images/no.gif' width='25' height='25' alt='' /></td>"));
                 });
             } else {
@@ -473,8 +479,8 @@ function approveReg(id)
 		var rowId = id.slice(-1);
 		var row = table.rows[rowId];
 		var text = row.cells[0].innerHTML;
-		var balance = row.cells[2].value;
-		var data = "action=approve_user&email="+text;
+		var balance = row.cells[2].children[0].value;
+		var data = "action=approve_user&email="+text+"&init_balance="+balance;
         $.post(requestUrl, data, success, "json");
         
         function success(resp)
@@ -528,6 +534,7 @@ function allUsers()
                     var row = $("<tr/>");
                     $("#tablesClients").append(row);
 					row.append($("<td>" + value + "</td>"));
+					row.append($("<td>" + value + "</td>"));
 					row.append($("<td><input type='image' id='userDetails"+(index+1)+"' onClick='userDetails(this.id)' src='images/ButtonDetails.gif'/></td>"));
                 });
             }else{alert(resp.message);}
@@ -562,7 +569,7 @@ function accountDetails()
 					row.append($("<td>" + resp.balance + "</td>"));
 					row.append($("<td>" + resp.account_number + "</td>"));
 					 
-		var downLink = "Transactions <a href='../downloads/"+email+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
+		var downLink = "Transactions <a href='../downloads/"+resp.account_number+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
 		document.getElementById("transactions").innerHTML=downLink; 
             }else{alert(resp.message);}
         }
@@ -629,10 +636,10 @@ $(document).ready(function(){
 	$("#sendNewPass").click(function(event){
 		event.preventDefault();
 		var token = location.search.split('token=')[1];
-        var pwd = document.getElementById('RRpwd').value;
+		var pwd = document.getElementById('RRpwd').value;
 		var pwdC = document.getElementById ('RRpwdRep').value;
 		
-		if (pwd!=pwdC){
+		if (pwd==pwdC){
 		
 			var data = "action=change_pass&token="+token+"&new_pass="+pwd;
 			$.post(requestUrl, data, success, "json");
@@ -646,6 +653,26 @@ $(document).ready(function(){
             {
 				alert("Done! Now you can log in with your new password!");
 				window.open("index.html", "_self");
+            } else {
+		alert(resp.message);
+	    }
+        }
+    });
+});
+
+//Recover pass
+$(document).ready(function(){
+	$("#recoverPass").click(function(event){
+		event.preventDefault();
+		var email = document.getElementById('Remail').value;
+        var data = "action=recover_pass&email="+email;
+        $.post(requestUrl, data, success, "json");
+        function success(resp)
+        {
+            if (resp.status=="true")//TODO
+            {
+		alert("You will soon receive an email with further instructions!");
+		window.open("index.html", "_self");
             } else {
 		alert(resp.message);
 	    }

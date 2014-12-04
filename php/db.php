@@ -33,7 +33,7 @@ function recover_pass_db($email) {
 
 		print_debug_message('Producing token for the password update...');
 		$token = sha1(openssl_random_pseudo_bytes(20));
-		$query = 'update USERS set password_token="' . $token . '", exp_date=ADDTIME(now(), ' . $PASSREC_TOKEN_DURATION . '), was_used=0
+		$query = 'update USERS set password_token= "' . $token . '" , exp_date=ADDTIME(now(), "' . $PASSREC_TOKEN_DURATION . '"), was_used=0
 			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 
@@ -293,9 +293,9 @@ function get_tancode_id_db($email, $account_num) {
 
 		$row = mysqli_fetch_array($result);
 		$scs = $row['scs'];
-		if ($scs == 1)
+		if ($scs == 2)
 			return array('status' => true,
-				     'tancode_id' => 0);
+				     'tancode_id' => -1);
 
 		print_debug_message('Obtaining free tancode id of user...');
 		$query = 'select tancode_id from TRANSACTION_CODES
@@ -337,7 +337,7 @@ function set_trans_form_db($email, $account_num_src, $account_num_dest, $amount,
 				     'err_message' => 'Failed to connect to database');
 
 		// using TAN codes
-		if($tancode_id == 0){ 
+		if($tancode_id > 0){ 
 			print_debug_message('Checking if tancode is valid...');
 			$tancode_value = mysql_real_escape_string($tancode_value);
 			$query = 'select is_used from TRANSACTION_CODES
@@ -355,7 +355,17 @@ function set_trans_form_db($email, $account_num_src, $account_num_dest, $amount,
 			if ($row['is_used'] != 0)
 				return array('status' => false,
 						'err_message' => 'You entered an already used tancode');
-						
+
+			$query = 'update TRANSACTION_CODES set is_used=1
+			  where account_number="' . $account_num_src . '"
+			  and tancode_id="' . $tancode_id . '"';
+			$result = mysqli_query($con, $query);
+
+			$num_rows = mysqli_affected_rows($con);
+			if ($num_rows == 0)
+				return array('status' => false,
+						'err_message' => "Code wasn't set to used");
+			
 		} else { // using SCS
 		
 		if($email < 0)
@@ -386,17 +396,7 @@ function set_trans_form_db($email, $account_num_src, $account_num_dest, $amount,
 		$res_arr = transfer_money($account_num_src, $account_num_dest, $amount, $description, 0);
 		if ($res_arr['status'] == false)
 			return $res_arr;
-
-		$query = 'update TRANSACTION_CODES set is_used=1
-			  where account_number="' . $account_num_src . '"
-			  and tancode_id="' . $tancode_id . '"';
-		$result = mysqli_query($con, $query);
-
-		$num_rows = mysqli_affected_rows($con);
-		if ($num_rows == 0)
-			return array('status' => false,
-				     'err_message' => "Code wasn't set to used");
-
+		
 		close_dbconn($con);
 
 	} catch (Exception $e) {
@@ -416,10 +416,11 @@ function set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value
 			return array('status' => false,
 				     'err_message' => 'Failed to connect to database');
 
-		//using TAN codes
-		if($tancode_id != 0){
-		print_debug_message('Checking if tancode is valid...');
 		$tancode_value = mysql_real_escape_string($tancode_value);
+		
+		//using TAN codes
+		if($tancode_id > 0){
+		print_debug_message('Checking if tancode is valid...');
 		$query = 'select is_used from TRANSACTION_CODES where
 			  where account_number="' . $account_num_src . '"
 			  and tancode_id="' . $tancode_id . '"
@@ -451,12 +452,12 @@ function set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value
 			$flag = false;
 			for($i = 0 ; $i < 1001 ; $i++){
 				$hash = substr(sha1($scs_password.$file_contents.$scs_string.$i),0,20);
-				if(	$hash == $tancode_value){
+				if($hash == $tancode_value){
 					$flag = true;
 					break;
 				}
 			}
-			if(flag == false)
+			if($flag == false)
 				return array('status' => false,
 							'err_message' => 'Invalid SCS Token');
 		}
@@ -476,7 +477,7 @@ function set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value
 				return $res_arr;
 		}
 
-		if($tancode_id != 0){
+		if($tancode_id > 0){
 			$query = 'update TRANSACTION_CODES set is_used=1
 			  where account_number="' . $account_num_src . '"
 			  and tancode_id="' . $tancode_id .'"';
@@ -999,44 +1000,21 @@ function approve_user_db($email, $init_balance) {
 			$row = mysqli_fetch_array($result);
 			$account_num = $row[0];
 			
-			/*
-			// Making account number resemble normal banking systems with 9 digits
-			$digits = strlen(strval($account_num));
-			$missing_digits = 9 - $digits;
-			$trailer = rand(pow(10, $missing_digits-1), pow(10, $missing_digits)-1);
-			$new_account_num = intval(strval($account_num) . strval($trailer)); 
-			$query = 'update BALANCE set account_number = ' . $new_account_num . '
-			  where account_number="' . $account_num . '"';
-			$result = mysqli_query($con, $query);
-			$num_rows = mysqli_affected_rows($con);
-			if ($num_rows == 0)
-				return array('status' => false,
-						'err_message' => 'Non existing user with the specified email');
-			
-			$query = 'alter table BALANCE AUTO_INCREMENT='.$account_num;
-			$result = mysqli_query($con, $query);
-			$num_rows = mysqli_affected_rows($con);
-			if ($num_rows == 0)
-				return array('status' => false,
-						'err_message' => 'Non existing user with the specified email');
-						
-			*/
-			
-			if ($scs == 0) {
+			if ($scs == 1) {
+
+				$query = 'select max(tancode_id) as max_id from TRANSACTION_CODES
+						  where account_number="' . $account_num . '"';
+				$result = mysqli_query($con, $query);
+
+				$num_rows = mysqli_num_rows($result);
+				if ($num_rows == 0)
+					$start_id = 1;
+				else
+					$row = mysqli_fetch_array($result);
+					$start_id = $row['max_id'] + 1;
 
 				$codes = array();
 				for ($i = 0 ; $i < 100 ; $i++) {
-
-					$query = 'select max(tancode_id) as max_id from TRANSACTION_CODES
-						  where account_number="' . $account_number . '"';
-					$result = mysqli_query($con, $query);
-
-					$num_rows = mysqli_num_rows($result);
-					if ($num_rows == 0)
-						$start_id = 1;
-					else
-						$row = mysqli_fetch_array($result);
-						$start_id = $row['max_id'] + 1;
 
 					$codes[$i]['id'] = $start_id + $i;
 					$codes[$i]['value'] = uniqid(chr(mt_rand(97, 122)).chr(mt_rand(97, 122)));
@@ -1045,9 +1023,9 @@ function approve_user_db($email, $init_balance) {
 				print_debug_message('Storing tancodes...');
 				$query = 'insert into TRANSACTION_CODES (account_number, tancode_id, tancode) values';
 				for ($i = 0 ; $i < 100 ; $i++) {
-					$query .= ' ("' . $account_number . '", "' . $codes[$i]['id'] . '", "' . $codes[$i]['value'] . '")';
+					$query = $query . ' ("' . $account_num . '", "' . $codes[$i]['id'] . '", "' . $codes[$i]['value'] . '")';
 					if ($i != 99)
-						$query .= ',';
+						$query = $query . ',';
 				}
 				$result = mysqli_query($con, $query);
 
@@ -1068,7 +1046,7 @@ function approve_user_db($email, $init_balance) {
 				
 				print_debug_message('Storing scs string...');
 				$query = 'update USERS set scs_string="' . $scs_string . '"
-					  where email="' . $email . '"';
+					  , scs_password="' . $scs_password . '" where email="' . $email . '"';
 				$result = mysqli_query($con, $query);
 
 				$num_rows = mysqli_affected_rows($con);
@@ -1089,7 +1067,7 @@ function approve_user_db($email, $init_balance) {
 	}
 
 	return array('status' => true);
-}
+} 
 
 function reject_user_db($email) {
 

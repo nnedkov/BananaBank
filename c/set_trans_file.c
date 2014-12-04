@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <string.h>
-#define MAX 250
+#define MAX 500
 
 
-char dest[15][12],amount[15][30],code[15], description[15][100];
+char dest[15][12],amount[15][30], description[15][100];
 int i = 0;
 
 void tokenize(char order[])
@@ -13,13 +13,13 @@ void tokenize(char order[])
 
     if(ptr1 != NULL)
     {
-	strncpy(dest[i],ptr1,11);
+	strcpy(dest[i],ptr1);
         ptr1 = strtok(NULL,",");
 	if(ptr1 != NULL)
-		strncpy(amount[i],ptr1,59);
+		strcpy(amount[i],ptr1);
 	ptr1 = strtok(NULL,",");
 	if(ptr1 != NULL)
-		strncpy(description[i],ptr1,99);
+		strcpy(description[i],ptr1);
     }
 	i++;
 }
@@ -60,7 +60,7 @@ int clear_lines(char *filename){
         }
 
         /* open another file in write mode */
-        fp2 = fopen("/var/www/uploads/temp.txt", "w");
+        fp2 = fopen("/var/www/banana_bank/uploads/temp.txt", "w");
 
         if (!fp2) {
                 printf("Unable to open the file to write\n");
@@ -70,7 +70,7 @@ int clear_lines(char *filename){
         /* copy the contents of file 1 to file 2 except all blank lines */
         while (!feof(fp1)) {
                 fgets(str, MAX, fp1);
-                if (strcmp(str, "\n") == 0) {
+                if (strcmp(str, "\n") == 0 || strcmp(str, "\r\n") == 0) {
                         continue;
                 }
                 fputs(str, fp2);
@@ -83,7 +83,7 @@ int clear_lines(char *filename){
         /* remove in the source file(with blank lines) */
         remove(filename);
         /* rename output file to source file name */
-        rename("/var/www/uploads/temp.txt", filename);
+        rename("/var/www/banana_bank/uploads/temp.txt", filename);
         return 1;
   }
 
@@ -95,6 +95,6 @@ int main(int argc, char *argv[])
 	}
 	
 	for(l = 0; l < i; l++)
-		printf("%s %s %s",dest[l],amount[l],description[i]);
+		printf("%s %s %s",dest[l],amount[l],description[l]);
 	return 0;
 }

@@ -25,8 +25,8 @@ function reg_client() {
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
 	print_debug_message('Checking if password is strong enough...');
-	if (check_pass($pass))
-		return error('Weak password. Make sure your password is stronger');
+	if(!check_pass($pass))
+		return error('Weak password. Make sure your is more than 6 characters and has at least one capital letter and one number');
 	print_debug_message('Checking if way of authenticating transactions is valid...');
 	if (!preg_match('/^[1-2]$/', $scs))
 		return error('Invalid parameter (only 1 or 2 is allowed)');
@@ -119,13 +119,14 @@ function download_scs_exe() {
 	
 	print_debug_message('Inserting SCS string and Building project...');
 	
-	shell_exec('sed \'/JTextField tanField/ a\        private String secret = "' . $scs_string . '";\' ../java/Original.java > ../java/src/BananaSCS.java');
-	shell_exec('../java/ant && ../exe/ant -f BuildSCS.xml');
+	shell_exec('sed \'/JTextField tanField/ a\   private String secret = "' . $scs_string . '";\' ../java/Original.java > ../java/src/BananaSCS.java');
+	shell_exec('cd /var/www/banana_bank/java/ && ant && cd ../exe/ && ant -f BuildSCS.xml');
 	shell_exec('mv ../exe/SCS.jar ../exe/SCS' . $account_num . '.jar');
-	
+	shell_exec('chmod +x ../exe/SCS' . $account_num . '.jar');
 	
 	//removing temp files
-	//shell_exec('rm 	../java/exe/SCS.jar && rm 	../java/src/BananaSCS.java');
+	shell_exec('cd ../bash/ && ./cleaner.sh ../exe/SCS' . $account_num . '.jar');
+	shell_exec('cd ../bash/ && ./cleaner.sh ../java/src/BananaSCS.java');
 	
 }
 
@@ -200,10 +201,13 @@ function get_trans_client_pdf() {
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
+	$filename = __DIR__ . '/../downloads/' .  $res_arr['account_num']  . '.pdf';
+	shell_exec('sudo /var/www/banana_bank/bash/cleaner.sh ' . $filename);
+
 	$html = output_trans_hist_html($account_num, $res_arr['trans_recs']);
 	$mpdf = new mPDF();
 	$mpdf->WriteHTML($html);
-	$mpdf->Output(__DIR__ . '/../downloads/' . $account_num . '.pdf', 'F');
+	$mpdf->Output($filename, 'F');
 }
 
 function get_tancode_id() {
@@ -281,7 +285,7 @@ function set_trans_form() {
 	if (strlen($description) > 100)
 		return error('Description length should be at most 100 characters');
 
-	if ($tancode_id == 0){ // USE SCS instead
+	if ($tancode_id < 0){ // USE SCS instead
 	if (strlen($tancode_value) != 20)
 		return error('SCS token length should be 20');
 
@@ -326,7 +330,7 @@ function set_trans_file() {
 		return error($res_arr['err_message']);
 
 	//getting parsed file contents
-	$params = parse_file($filename);
+	$params = parse_file($res_arr['filename']);
 	if($params == false)
 		return error('Uploaded file does not comply with rules');
 	
@@ -338,10 +342,10 @@ function set_trans_file() {
 		return error('Uploaded file does not comply with rules. Last line should have only TAN code or SCS token');
 
 	// using TAN 
-	if($tancode_id != 0){
+	if($tancode_id > 0){
 		
 		$tancode_value = sanitize_input($value[0]);
-		if (strlen($tancode_value != 15))
+		if (strlen($tancode_value) != 15)
 			return error('Check TAN code length');
 	
 		$res_arr = set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value, $params, 0);
@@ -350,16 +354,17 @@ function set_trans_file() {
 	} else {
 		
 		$scs_token = sanitize_input($value[0]);
-		if (strlen($scs_token != 20))
+		if (strlen($scs_token) != 20)
 			return error('Check SCS Token length');
 			
 		//getting file contents from first elements and removing it from array
 		$file_contents = array_shift($params);
-		
+		$file_contents = trim(preg_replace('/\s+/', '', $file_contents));
 		$res_arr = set_trans_file_db($email, $account_num_src, $tancode_id, $scs_token, $params, $file_contents);
 		if ($res_arr['status'] == false)
 			return error($res_arr['err_message']);
 	}
+	
 	unset($_SESSION['tan_code_id']);
 	session_write_close();
 

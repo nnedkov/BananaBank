@@ -25,7 +25,7 @@
 						<div style="padding-bottom:8px;">
 						<table width="215" border="0" align="center" cellpadding="3" cellspacing="0">
 							<tr>
-								<td width="59" class="body1">Account N:</td>
+								<td width="59" class="body1">Account Number:</td>
 							</tr>
 							<tr>
 								<td class="body1" id="accountNumber"></td>
@@ -48,14 +48,11 @@
 										<input type="image" name="imageField" id="logoutClient" onClick="logoutClient()" src="images/ButtonLogout.gif" />
 									</label></td>
 							</tr>
-							<tr>
-								<td><div class="body1" style="text-align:right;"><a href="passChange.html">Change Password</a></div></td>
-							</tr>
 						</table>
 						<script type="text/javascript">
-						getAccountClient();
+						setSCSToDownload();
 						setFileToDownload();
-						
+						getAccountClient();
 						</script>
 						</div>
 					</td><!--getFileToDownload();-->
@@ -90,15 +87,16 @@
 							</label>
 						</td>
 						<td>
-							<label>
-								<input type="image" name="imageField" id="downloadSCS"  src="images/ButtonDownloadNewSCS.gif" />
+							<label id="downloadSCS">
 							</label>
 						</td>
+						<td>
+							<label id="downloadButtonClient">
+							<!--<input type="image" name="imageField"  id="downloadTransactionsClient" src="images/ButtonDownloadTransactions.gif" /></a>-->
+						</td>
+				</label>
 					</tr>
 				</table>
-				<label id="downloadButtonClient">
-					<!--<input type="image" name="imageField"  id="downloadTransactionsClient" src="images/ButtonDownloadTransactions.gif" /></a>-->
-				</label>
 				<div class="body2" style="padding-top:15px;">Transactions History</div>
 				<div>
 					<table class="tables" id="tablesTrans">

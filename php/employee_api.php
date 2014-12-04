@@ -21,8 +21,8 @@ function reg_emp() {
      	if (strlen($email) > 64)
 		return error('Email length should be at most 64 characters');
 	print_debug_message('Checking if password is strong enough...');
-	if (check_pass($pass))
-		return error('Weak password. Make sure your password is stronger.');
+	if (!check_pass($pass))
+		return error('Weak password. Make sure your is more than 6 characters and has at least one capital letter and one number');
 
 	$res_arr = reg_emp_db($email, $pass);
 	if ($res_arr['status'] == false)
@@ -222,6 +222,7 @@ function get_trans_emp_pdf() {
 	$mpdf = new mPDF();
 	$mpdf->WriteHTML($html);
 	$mpdf->Output($filename, 'F');
+	
 }
 
 function get_trans() {

@@ -54,7 +54,7 @@ function sanitize_input($input) {
 	return $input;
 }
 
-function mail_tancodes($to, $codes, $account_num, $pdf_password) {
+function mail_tancodes($email, $codes, $account_num, $pdf_password) {
 
 	$content = '<!DOCTYPE html>
 		    <html>
@@ -94,9 +94,11 @@ function mail_tancodes($to, $codes, $account_num, $pdf_password) {
 
 	$subject = 'Your TAN codes';
 
-	$body = 'Attached is the TAN codes for your bank account, please use the password we provided you to open it.';
-
-	shell_exec('echo ' . $body . ' | mutt -s ' . $subject . ' -a ' . $filename . ' -- ' . $to);
+	$body = 'Attached are the TAN codes for your bank account, please use the password we provided you to open it.';
+	sleep(0.5);
+	send_attachment($email,$subject,$body,$filename);
+	sleep(0.5);
+	
 	unlink($filename);
 
 	return;
@@ -122,13 +124,15 @@ function mail_scs_pass($email, $scs_password, $account_num, $pdf_password) {
 	$filename = '/var/www/banana_bank/downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
 	$mpdf->Output($filename, 'F');
 
-	$subject = 'Your TAN codes';
+	$subject = 'Your SCS PIN';
 
-	$body = 'Attached is the TAN codes for your bank account, please use the password we provided you to open it.';
+	$body = 'Attached is the SCS PIN for your bank account, please use the password we provided you to open the file.';
 
-	shell_exec('echo "' . $body . '" | mutt -s "' . $subject . '" -a "' . $filename . '" -- "' . $to . '"');
+	sleep(1);
+	send_attachment($email,$subject,$body,$filename);
+	sleep(1);
 	
-	//unlink($filename);
+	unlink($filename);
 
 	return;
 }
@@ -139,7 +143,7 @@ function mail_reject_account($to) {
 
 	$subject = 'Registration to Banana bank';
 
-	$content = 'Dear Madame/Sir,\r\n we inform you that your registration to Banana bank was not approved.';
+	$content = 'Dear Madame/Sir, we regret to inform you that your registration to Banana bank was not approved.';
 
 	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
 	$headers .= 'MIME-Version: 1.0\r\n';
@@ -157,7 +161,7 @@ function mail_reject_trans($to) {
 
 	$subject = 'Transaction in Banana bank';
 
-	$content = 'Dear Madame/Sir,\r\n we inform you that your transaction in Banana bank was not approved.';
+	$content = 'Dear Madame/Sir, we regret to inform you that your transaction in Banana bank was not approved.';
 
 	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
 	$headers .= 'MIME-Version: 1.0\r\n';
@@ -175,8 +179,8 @@ function mail_token($to, $token) {
 
 	$subject = 'Password recovery in Banana bank';
 
-	$content = 'Dear Madame/Sir,\r\n click on the url below in order to change your password:\r\n';
-	$content .= 'https://localhost/banana_bank/html/pass_recovery.html?token=' . $token;
+	$content = 'Dear Madame/Sir, click on the url below in order to change your password:  ';
+	$content .= 'http://localhost/banana_bank/html/changePass.html?token=' . $token;
 
 	$headers = 'From:' . $SYSTEM_EMAIL . '\r\n';
 	$headers .= 'MIME-Version: 1.0\r\n';
@@ -258,36 +262,74 @@ function upload_file() {
 function parse_file($filename) {
 
 	print_debug_message('Parsing file ' . $filename . '...');
-    $handle = popen('../exe/set_trans_file ' . $filename, 'r');
     
-    //getting contents of file (except scs_token) in case it needs to be hashed for SCS
-    $lines = file($filename);
+    $params = array();
+	$lines = file($filename);
     $contents = '';
 	for($i = 0 ; $i < count($lines)-1 ; $i++)
 		$contents .= $lines[$i];
 	
-	$params = array();
+    $handle = popen('/var/www/banana_bank/exe/set_trans_file ' . $filename, 'r');
+    
+    //getting contents of file (except scs_token) in case it needs to be hashed for SCS
+    
 	array_push($params, $contents);
 	while ($s = fgets($handle)) {
-		if (ord($s) == 32) // check if line is empty
-			break;
 		$words = str_word_count($s, 1, '1234567890');
 		array_push($params, $words);
 	}
+	
 	pclose($handle);
 
+	
 	return $params;
 }
 
 function check_pass($pass) {
 	
-	$uppercase = preg_match('@[A-Z]@', $password);
-	$lowercase = preg_match('@[a-z]@', $password);
-	$number    = preg_match('@[0-9]@', $password);
+	$uppercase = preg_match('@[A-Z]@', $pass);
+	$lowercase = preg_match('@[a-z]@', $pass);
+	$number    = preg_match('@[0-9]@', $pass);
 
-	if(!$uppercase || !$lowercase || !$number || strlen($password) < 6)
+	if(!$uppercase || !$lowercase || !$number || strlen($pass) < 6)
 		return false;
 	else
 		return true;
 }
+
+function send_attachment($to,$subject,$body,$filename){
+
+$random_hash = md5(date('r', time())); 
+$headers = "From: noreply.mybank@gmail.com"; 
+$headers .= "\r\nContent-Type: multipart/mixed; boundary=\"PHP-mixed-".$random_hash."\""; 
+$attachment = chunk_split(base64_encode(file_get_contents($filename))); 
+ob_start();
+?> 
+--PHP-mixed-<?php echo $random_hash; ?>  
+Content-Type: multipart/alternative; boundary="PHP-alt-<?php echo $random_hash; ?>" 
+
+--PHP-alt-<?php echo $random_hash; ?>  
+Content-Type: text/html; charset="iso-8859-1" 
+Content-Transfer-Encoding: 7bit
+
+<?php echo $body; ?>
+
+--PHP-alt-<?php echo $random_hash; ?>-- 
+
+--PHP-mixed-<?php echo $random_hash; ?>  
+Content-Type: application/zip; name="<?php echo basename($filename); ?>"  
+Content-Transfer-Encoding: base64  
+Content-Disposition: attachment  
+
+<?php echo $attachment; ?> 
+--PHP-mixed-<?php echo $random_hash; ?>-- 
+
+<?php 
+
+$message = ob_get_clean(); 
+
+mail( $to, $subject, $message, $headers ); 
+}
+
+
 ?>
