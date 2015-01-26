@@ -27,6 +27,7 @@ padding-bottom:8px;
 }
 .menu a{ color:#714101; text-decoration:none; }
 .menu a:hover{ color:#F8F979; text-decoration:none; }
+.hidden {display:none;}
 .body1 {
 font-family:Verdana, Arial, Helvetica, sans-serif;
 font-size:11px;

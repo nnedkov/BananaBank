@@ -34,7 +34,7 @@ class Encryption
      * Key to be used for encryption/decryption.
      * @var string      The key for encryption/decryption
      */
-    private static $key = "qgyXyjD5YpF";
+    private static $key = "WgyXyjD5YpF";
 
 
 
@@ -51,7 +51,6 @@ class Encryption
      * @var string      The initial vector for encryption/decryption
      */
     private static $iv = "12345678901234567890123456789012";
-
 
 
     /**

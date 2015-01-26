@@ -99,37 +99,6 @@ function logout_client() {
 	echo json_encode($res);
 }
 
-function download_scs_exe() {
-
-	print_debug_message('Checking if parameters were set in the session during login...');
-	session_start();
-	$res_arr = is_valid_session();
-	if ($res_arr['status'] == false)
-		return error($res_arr['err_message']);
-	session_write_close();
-
-	if ($_SESSION['is_employee'] == 'true')
-		return error('Invalid operation for employee');
-
-	$email = $_SESSION['email'];
-	$account_num = $_SESSION['account_num'];
-	$scs_string = get_scs_string_db($email);
-	if($scs_string < 0)
-		return error('Error in getting the scs string');
-	
-	print_debug_message('Inserting SCS string and Building project...');
-	
-	shell_exec('sed \'/JTextField tanField/ a\   private String secret = "' . $scs_string . '";\' ../java/Original.java > ../java/src/BananaSCS.java');
-	shell_exec('cd /var/www/banana_bank/java/ && ant && cd ../exe/ && ant -f BuildSCS.xml');
-	shell_exec('mv ../exe/SCS.jar ../exe/SCS' . $account_num . '.jar');
-	shell_exec('chmod +x ../exe/SCS' . $account_num . '.jar');
-	
-	//removing temp files
-	shell_exec('cd ../bash/ && ./cleaner.sh ../exe/SCS' . $account_num . '.jar');
-	shell_exec('cd ../bash/ && ./cleaner.sh ../java/src/BananaSCS.java');
-	
-}
-
 function get_account_client() {
 
 	print_debug_message('Checking if parameters were set in the session during login...');
@@ -201,13 +170,16 @@ function get_trans_client_pdf() {
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
-	$filename = __DIR__ . '/../downloads/' .  $res_arr['account_num']  . '.pdf';
-	shell_exec('sudo /var/www/banana_bank/bash/cleaner.sh ' . $filename);
+	$filename = __DIR__ . '/../.bank_downloads/' .  $res_arr['account_num']  . '.pdf';
+	shell_exec('sudo /var/www/banana_bank/.bash/cleaner.sh ' . $filename);
 
 	$html = output_trans_hist_html($account_num, $res_arr['trans_recs']);
 	$mpdf = new mPDF();
 	$mpdf->WriteHTML($html);
 	$mpdf->Output($filename, 'F');
+	$_SESSION['filename'] = $filename;
+	$res = array('status' => 'true', 'url' => 'downloads.php');
+	echo json_encode($res);
 }
 
 function get_tancode_id() {
@@ -286,9 +258,8 @@ function set_trans_form() {
 		return error('Description length should be at most 100 characters');
 
 	if ($tancode_id < 0){ // USE SCS instead
-	if (strlen($tancode_value) != 20)
-		return error('SCS token length should be 20');
-
+	#if (strlen($tancode_value) != 20)
+	#	return error('SCS token length should be 20');
 	} else {
 	if (strlen($tancode_value) != 15)
 		return error('Tancode length should be 15');

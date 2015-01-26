@@ -97,8 +97,6 @@ function getAccountClient()
 				document.getElementById("accountNumber").innerHTML=resp.account_number;
 				var downLink = "<a href='../downloads/"+resp.account_number+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
 				document.getElementById("downloadButtonClient").innerHTML=downLink; 
-				var scsLink = "<a href='../exe/SCS"+resp.account_number+".jar' target='_blank'><img src='images/ButtonDownloadNewSCS.gif'/></a>";
-				document.getElementById("downloadSCS").innerHTML=scsLink;
             } else {
 		alert(resp.message);
 	    }
@@ -150,8 +148,8 @@ $(document).ready(function(){
       event.preventDefault();
 	  var dest = document.getElementById('Demail').value;
         var amount = document.getElementById('amount').value;
-        var tancode_value = document.getElementById('code').value;
-		var description = document.getElementById('desc').value;
+        var tancode_value = encodeURIComponent(document.getElementById('code').value);
+		var description = encodeURIComponent(document.getElementById('desc').value);
 		
 		if (description.length <= 100){
 			var data = "action=set_trans_form&account_num_dest="+dest+"&amount="+amount+"&tancode_value="+tancode_value+"&description="+description;
@@ -200,7 +198,7 @@ function getTancode()
         {
             if (resp.status=="true")
             {
-				if (resp.tan_code_id!="0"){
+				if (resp.tan_code_id!="-1"){
 					document.getElementById("tanCode").innerHTML="TAN N: "+resp.tan_code_id;// if zero = SCS
 				}else{
 					document.getElementById("tanCode").innerHTML="TAN from SCS:"	

@@ -89,7 +89,7 @@ function mail_tancodes($email, $codes, $account_num, $pdf_password) {
 	$mpdf = new mPDF();
 	$mpdf->SetProtection(array('copy', 'print'), $pdf_password);
 	$mpdf->WriteHTML($content);
-	$filename = '/var/www/banana_bank/downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
+	$filename = '/var/www/.bank_downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
 	$mpdf->Output($filename, 'F');
 
 	$subject = 'Your TAN codes';
@@ -104,36 +104,39 @@ function mail_tancodes($email, $codes, $account_num, $pdf_password) {
 	return;
 }
 
-function mail_scs_pass($email, $scs_password, $account_num, $pdf_password) {
+function mail_scs($email, $scs_password, $account_num, $pdf_password, $scs_string) {
 	
-	$content = '<!DOCTYPE html>
-		    <html>
-		    <body>
-
-		    <h2 align="center"> Banana Bank </h2>
-
-		    <p>We would like to welcome you to our family. The Banana Bank family!</p>
-		    <p> At Banana Bank, we care about the safety of your bananas. That\'s why we have sent you an SCS PIN that you can use to make sure that nobody can access your bananas except you!
-                    Keep this PIN safe, and don\'t share it with anyone! You will be asked to enter it when using your SCS application.</p>
-			<p> Your SCS PIN: </p>';
-			
 	$content = $content . $scs_password;
 	$mpdf = new mPDF();
 	$mpdf->SetProtection(array('copy', 'print'), $pdf_password);
 	$mpdf->WriteHTML($content);
-	$filename = '/var/www/banana_bank/downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
-	$mpdf->Output($filename, 'F');
+	$filename1 = '/var/www/.bank_downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
+	$mpdf->Output($filename1, 'F');
 
 	$subject = 'Your SCS PIN';
 
 	$body = 'Attached is the SCS PIN for your bank account, please use the password we provided you to open the file.';
 
+	shell_exec('sed \'/JTextField tanField/ a\   private String secret = "' . $scs_string . '";\' ../.java/Original.java > ../.java/src/BananaSCS.java');
+	shell_exec('cd /var/www/banana_bank/.java/ && ant && cd ../.exe/ && ant -f BuildSCS.xml');
+	shell_exec('mv ../.exe/SCS.jar ../.exe/SCS' . $account_num . '.jar');
+	shell_exec('chmod +x ../.exe/SCS' . $account_num . '.jar');
+	
+	$filename2 =  '../.exe/SCS' . $account_num . '.jar';
+	
 	sleep(1);
-	send_attachment($email,$subject,$body,$filename);
+	send_attachment($email,$subject,$body,$filename1);
+	send_attachment($email,$subject,$body,$filename2);
 	sleep(1);
 	
+	//removing temp files
 	unlink($filename);
-
+	unlink('../.exe/SCS' . $account_num . '.jar');
+	unlink('../.java/bin/BananaSCS.class');
+	unlink('../.java/bin/BananaSCS$1.class');
+	unlink('../.java/bin/BananaSCS$2.class');
+	unlink('../.java/bin/BananaSCS$3.class');
+	unlink('../.java/src/BananaSCS.java');	
 	return;
 }
 
@@ -237,7 +240,8 @@ function output_trans_hist_html($account_num, $trans_recs) {
 }
 
 function upload_file() {
-
+	
+	
 	if ($_FILES['uploadFile']['size'] > 2000)
 	    return array('status' => false,
 			 'err_message' => 'Sorry, your file is too large');
@@ -246,8 +250,7 @@ function upload_file() {
 	    return array('status' => false,
 			 'err_message' => 'Sorry, only text files are allowed');
 
-	$name = sanitize_input($_FILES['uploadFile']['name']);
-	$target = '/var/www/banana_bank/uploads/' . $name;
+	$target = '/var/www/.bank_uploads/'.'transaction.txt';
 
 	if (move_uploaded_file($_FILES['uploadFile']['tmp_name'], $target))
 		print_debug_message('The file ' . basename($_FILES['uploadFile']['name']) . ' has been uploaded.');
@@ -269,7 +272,7 @@ function parse_file($filename) {
 	for($i = 0 ; $i < count($lines)-1 ; $i++)
 		$contents .= $lines[$i];
 	
-    $handle = popen('/var/www/banana_bank/exe/set_trans_file ' . $filename, 'r');
+    $handle = popen('/var/www/banana_bank/.exe/set_trans_file ' . $filename, 'r');
     
     //getting contents of file (except scs_token) in case it needs to be hashed for SCS
     

@@ -215,14 +215,16 @@ function get_trans_emp_pdf() {
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 		
-	$filename = __DIR__ . '/../downloads/' .  $res_arr['account_num']  . '.pdf';
-	shell_exec('sudo /var/www/banana_bank/bash/cleaner.sh ' . $filename);
+	$filename = __DIR__ . '/../.bank_downloads/' .  $res_arr['account_num']  . '.pdf';
+	shell_exec('sudo /var/www/banana_bank/.bash/cleaner.sh ' . $filename);
 
 	$html = output_trans_hist_html($res_arr['account_num'], $res_arr['trans_recs']);
 	$mpdf = new mPDF();
 	$mpdf->WriteHTML($html);
 	$mpdf->Output($filename, 'F');
-	
+	$_SESSION['filename'] = $filename;
+	$res = array('status' => 'true', 'url' => 'downloads.php');
+	echo json_encode($res);
 }
 
 function get_trans() {
