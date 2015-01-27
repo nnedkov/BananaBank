@@ -28,12 +28,16 @@ public class BananaSCS {
 	private JTextField pinField;
 	private JTextField destField;
 	private JTextField amountField;
+
 	private JTextField tanField;
-	
+
+	private JTextField descriptionField;
+
 	private JButton uploadButton;
 	private JLabel downloadLabel;
 	
 	private String textFromFile;
+
 	private boolean setFile = false;
 	private JLabel fileLabel;
 
@@ -80,98 +84,162 @@ public class BananaSCS {
 		MessageDigest messageDigest;
 		try {
 			messageDigest = MessageDigest.getInstance("SHA-1");
-		
-			Random rand = new Random();
-			int randomNum = rand.nextInt(1001);
-			
-		
-		messageDigest.update((data+secret+randomNum).getBytes());
-		BigInteger hash = new BigInteger(1, messageDigest.digest());
-		String result = hash.toString(16).substring(0, 20);
-		tanField.setText(result);
-		} catch (NoSuchAlgorithmException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+			long time = System.currentTimeMillis() / 100000;
+			messageDigest.update((data+secret+time).getBytes());
+			BigInteger hash = new BigInteger(1, messageDigest.digest());
+			String result = hash.toString(16).substring(0, 20);
+			tanField.setText(result);
+			} catch (NoSuchAlgorithmException e1) {
+				// 	TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 	}
 	/**
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		frmBananascs = new JFrame();
-		frmBananascs.setBackground(new Color(139, 0, 0));
-		frmBananascs.getContentPane().setBackground(new Color(160, 82, 45));
-		frmBananascs.setTitle("BananaSCS");
-		//frmBananascs.setIconImage(null);
-		frmBananascs.setBounds(100, 100, 450, 300);
-		frmBananascs.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmBananascs.getContentPane().setLayout(new FormLayout(new ColumnSpec[] {
-				FormFactory.RELATED_GAP_COLSPEC,
-				FormFactory.DEFAULT_COLSPEC,
-				FormFactory.RELATED_GAP_COLSPEC,
-				ColumnSpec.decode("default:grow"),
-				FormFactory.DEFAULT_COLSPEC,},
-			new RowSpec[] {
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.RELATED_GAP_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.RELATED_GAP_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.RELATED_GAP_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,
-				FormFactory.RELATED_GAP_ROWSPEC,
-				FormFactory.DEFAULT_ROWSPEC,}));
-		
-		JLabel pinLabel = new JLabel("Your PIN");
-		pinLabel.setForeground(new Color(255, 255, 0));
-		frmBananascs.getContentPane().add(pinLabel, "4, 1");
-		
-		pinField = new JTextField();
-		frmBananascs.getContentPane().add(pinField, "4, 2, fill, default");
-		pinField.setColumns(10);
-		
-		JLabel destLabel = new JLabel("Destination");
-		destLabel.setForeground(new Color(255, 255, 0));
-		frmBananascs.getContentPane().add(destLabel, "4, 3");
-		
-		destField = new JTextField();
-		frmBananascs.getContentPane().add(destField, "4, 4, fill, default");
-		destField.setColumns(10);
-		
-		JLabel amountLabel = new JLabel("Amount");
-		amountLabel.setForeground(new Color(255, 255, 0));
-		frmBananascs.getContentPane().add(amountLabel, "4, 5");
-		
-		amountField = new JTextField();
-		frmBananascs.getContentPane().add(amountField, "4, 6, fill, default");
-		amountField.setColumns(10);
-		
-		JLabel ltanLabel = new JLabel("Your Generated TAN");
-		ltanLabel.setForeground(new Color(255, 255, 0));
-		frmBananascs.getContentPane().add(ltanLabel, "4, 7");
-		
-		tanField = new JTextField();
-		tanField.setEditable(false);
-		frmBananascs.getContentPane().add(tanField, "4, 8, fill, default");
-		tanField.setColumns(10);
-		
-		JButton tanButton = new JButton("Generate TAN");
-		tanButton.setForeground(new Color(255, 255, 0));
-		tanButton.setBackground(new Color(128, 0, 0));
-		tanButton.addMouseListener(new MouseAdapter() {
+
+        frmBananascs = new JFrame();
+
+        frmBananascs.setBackground(new Color(139, 0, 0));
+
+        frmBananascs.getContentPane().setBackground(new Color(160, 82, 45));
+
+        frmBananascs.setTitle("BananaSCS");
+
+        // frmBananascs.setIconImage(null);
+
+        frmBananascs.setBounds(100, 100, 450, 300);
+
+        frmBananascs.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        frmBananascs.getContentPane().setLayout(
+                        new FormLayout(new ColumnSpec[] {
+
+                        FormFactory.RELATED_GAP_COLSPEC,
+
+                        FormFactory.DEFAULT_COLSPEC,
+
+                        FormFactory.RELATED_GAP_COLSPEC,
+
+                        ColumnSpec.decode("default:grow"),
+
+                        FormFactory.DEFAULT_COLSPEC, },
+
+                        new RowSpec[] {
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+                        
+                        FormFactory.RELATED_GAP_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.RELATED_GAP_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.RELATED_GAP_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC,
+
+                        FormFactory.RELATED_GAP_ROWSPEC,
+
+                        FormFactory.DEFAULT_ROWSPEC, }));
+
+        JLabel pinLabel = new JLabel("Your PIN");
+
+        pinLabel.setForeground(new Color(255, 255, 0));
+
+        frmBananascs.getContentPane().add(pinLabel, "4, 1");
+
+        pinField = new JTextField();
+
+        frmBananascs.getContentPane().add(pinField, "4, 2, fill, default");
+
+        pinField.setColumns(10);
+
+        JLabel destLabel = new JLabel("Destination");
+
+        destLabel.setForeground(new Color(255, 255, 0));
+
+        frmBananascs.getContentPane().add(destLabel, "4, 3");
+
+        destField = new JTextField();
+
+        frmBananascs.getContentPane().add(destField, "4, 4, fill, default");
+
+        destField.setColumns(10);
+
+        JLabel amountLabel = new JLabel("Amount");
+
+        amountLabel.setForeground(new Color(255, 255, 0));
+
+        frmBananascs.getContentPane().add(amountLabel, "4, 5");
+
+        amountField = new JTextField();
+
+        frmBananascs.getContentPane().add(amountField, "4, 6, fill, default");
+
+        amountField.setColumns(10);
+        
+        JLabel descriptionLabel = new JLabel("Description");
+
+        descriptionLabel.setForeground(new Color(255, 255, 0));
+
+        frmBananascs.getContentPane().add(descriptionLabel, "4, 7");
+
+        descriptionField = new JTextField();
+
+        frmBananascs.getContentPane().add(descriptionField, "4, 8, fill, default");
+
+        descriptionField.setColumns(120);
+
+        JLabel ltanLabel = new JLabel("Your Generated TAN");
+
+        ltanLabel.setForeground(new Color(255, 255, 0));
+
+        frmBananascs.getContentPane().add(ltanLabel, "4, 9");
+
+        tanField = new JTextField();
+
+        tanField.setEditable(false);
+
+        frmBananascs.getContentPane().add(tanField, "4, 10, fill, default");
+
+        tanField.setColumns(10);
+
+        JButton tanButton = new JButton("Generate TAN");
+
+        tanButton.setForeground(new Color(255, 255, 0));
+
+        tanButton.setBackground(new Color(128, 0, 0));
+
+        tanButton.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				//TODO
 				String pin = pinField.getText();
 				String amount = amountField.getText();
 				String dest = destField.getText();
+				String description = descriptionField.getText();
 				if(pin.equals("") || pin.equals("Enter the PIN!")){
 					pinField.setText("Enter the PIN!");
 					return;
@@ -188,10 +256,11 @@ public class BananaSCS {
 						return;
 					}
 				}
+				
 				if (setFile){
 					hashTan(pin+textFromFile);
 				}else{
-					hashTan(pin+amount+dest);
+					 hashTan(pin + amount + dest + description);
 				}
 			}
 		});

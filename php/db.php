@@ -26,7 +26,7 @@ function recover_pass_db($email) {
 		$num_rows = mysqli_num_rows($result);
 		if ($num_rows == 0)
 			return array('status' => false,
-				     'err_message' => 'No existing user with the provided email');
+				     'err_message' => 'No existing user or user already requested password recovery');
 
 		$rec = mysqli_fetch_array($result);
 		if ($rec['is_approved'] == 0)
@@ -401,10 +401,10 @@ function set_trans_form_db($email, $account_num_src, $account_num_dest, $amount,
 			return array('status' => false,
 						'err_message' => 'Something went wrong while checking security parameters');
 		$flag = false;
-		$time_stamp = $_SERVER['REQUEST_TIME'] / 1000; // get time of request
+		$time_stamp = (integer)($_SERVER['REQUEST_TIME']/100); // get time of request
 		// check if scs_token is in window of [time_stamp-25,time_stamp+25]
-		for($i = -1 ; i < 2 ; $i++){
-			$hash = substr(sha1($scs_password.$amount.$account_num_dest.$scs_string.$description.strval($time_stamp+$i),0,20));
+		for($i = -1 ; $i < 2 ; $i++){
+			$hash = substr(sha1($scs_password.$amount.$account_num_dest.$description.$scs_string.strval($time_stamp+$i)),0,20);
 			if($hash == $tancode_value){
 				$flag = true;
 				break;
@@ -492,9 +492,9 @@ function set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value
 				return array('status' => false,
 						'err_message' => 'Something went wrong while checking security parameters');
 			$flag = false;
-			$time_stamp = $_SERVER['REQUEST_TIME'] / 1000; // get time of request
+			$time_stamp = (integer)($_SERVER['REQUEST_TIME']/100); // get time of request
 		    // check if scs_token is in window of [time_stamp-25 minutes,time_stamp+25 minutes]
-		    for($i = -1 ; i < 2 ; $i++){
+		    for($i = -1 ; $i < 2 ; $i++){
 				$hash = substr(sha1($scs_password.$file_contents.$scs_string.strval($time_stamp+$i)),0,20);
 				if($hash == $tancode_value){
 					$flag = true;

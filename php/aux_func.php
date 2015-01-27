@@ -89,7 +89,7 @@ function mail_tancodes($email, $codes, $account_num, $pdf_password) {
 	$mpdf = new mPDF();
 	$mpdf->SetProtection(array('copy', 'print'), $pdf_password);
 	$mpdf->WriteHTML($content);
-	$filename = '/var/www/.bank_downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
+	$filename = '/var/www/banana_bank/.bank_downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
 	$mpdf->Output($filename, 'F');
 
 	$subject = 'Your TAN codes';
@@ -110,7 +110,7 @@ function mail_scs($email, $scs_password, $account_num, $pdf_password, $scs_strin
 	$mpdf = new mPDF();
 	$mpdf->SetProtection(array('copy', 'print'), $pdf_password);
 	$mpdf->WriteHTML($content);
-	$filename1 = '/var/www/.bank_downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
+	$filename1 = '/var/www/banana_bank/.bank_downloads/' . $account_num . '-' . rand(11, 99) . '.pdf';
 	$mpdf->Output($filename1, 'F');
 
 	$subject = 'Your SCS PIN';
@@ -122,21 +122,15 @@ function mail_scs($email, $scs_password, $account_num, $pdf_password, $scs_strin
 	shell_exec('mv ../.exe/SCS.jar ../.exe/SCS' . $account_num . '.jar');
 	shell_exec('chmod +x ../.exe/SCS' . $account_num . '.jar');
 	
-	$filename2 =  '../.exe/SCS' . $account_num . '.jar';
+	$filename2 =  '/var/www/banana_bank/.exe/SCS' . $account_num . '.jar';
 	
-	sleep(1);
 	send_attachment($email,$subject,$body,$filename1);
 	send_attachment($email,$subject,$body,$filename2);
-	sleep(1);
 	
 	//removing temp files
-	unlink($filename);
-	unlink('../.exe/SCS' . $account_num . '.jar');
-	unlink('../.java/bin/BananaSCS.class');
-	unlink('../.java/bin/BananaSCS$1.class');
-	unlink('../.java/bin/BananaSCS$2.class');
-	unlink('../.java/bin/BananaSCS$3.class');
-	unlink('../.java/src/BananaSCS.java');	
+	unlink($filename1);
+	unlink($filename2);
+	unlink('/var/www/banana_bank/.java/src/BananaSCS.java');	
 	return;
 }
 
@@ -190,7 +184,7 @@ function mail_token($to, $token) {
 	$headers .= 'Content-Transfer-Encoding: base64\r\n';
 	$headers .= 'Content-Type: text/html; charset=ISO-8859-1\r\n';
 
-	$retval = mail($to, $subject, $content, $header);
+	$retval = mail($to, $subject, $content, $headers);
 
 	return $retval;
 }
@@ -332,7 +326,7 @@ Content-Disposition: attachment
 
 $message = ob_get_clean(); 
 
-mail( $to, $subject, $message, $headers ); 
+mail($to, $subject, $message, $headers ); 
 }
 
 

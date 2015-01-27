@@ -23,7 +23,7 @@ switch ($action) {
 	case 'reg_client':	return reg_client(); # DONE
 	case 'login_client':	return login_client(); # DONE
 	case 'logout_client':	return logout_client(); # DONE
-	case 'download_scs_exe':	return download_scs_exe(); 
+	//case 'download_scs_exe':	return download_scs_exe(); 
 	case 'get_account_client':	return get_account_client(); # DONE
 	case 'get_trans_client':	return get_trans_client();  # DONE
 	case 'get_trans_client_pdf':	return get_trans_client_pdf();
