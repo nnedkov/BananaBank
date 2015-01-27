@@ -60,7 +60,7 @@ int clear_lines(char *filename){
         }
 
         /* open another file in write mode */
-        fp2 = fopen("/var/www/banana_bank/uploads/temp.txt", "w");
+        fp2 = fopen("/var/www/banana_bank/.bank_uploads/temp.txt", "w");
 
         if (!fp2) {
                 printf("Unable to open the file to write\n");
@@ -83,7 +83,7 @@ int clear_lines(char *filename){
         /* remove in the source file(with blank lines) */
         remove(filename);
         /* rename output file to source file name */
-        rename("/var/www/banana_bank/uploads/temp.txt", filename);
+        rename("/var/www/banana_bank/.bank_uploads/temp.txt", filename);
         return 1;
   }
 

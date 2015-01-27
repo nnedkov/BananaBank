@@ -1,7 +1,11 @@
 <?php
 
+require_once '../php/aux_func.php';
+session_start();
 $res_arr = is_valid_session();
+if ($res_arr['status'] == false){
 	echo "You don't have enough permissions to access this file";
+}else{
 
 $file = $_SESSION['filename'];
 
@@ -18,5 +22,6 @@ if (file_exists($file)) {
     flush();
     readfile($file);
     exit;
+}
 }
 ?>

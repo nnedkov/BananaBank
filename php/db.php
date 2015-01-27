@@ -1,5 +1,6 @@
 <?php
 
+require_once 'config.php';
 require_once 'dbconn.php';
 require_once 'aux_func.php';
 require_once '../password_compat/password.php';
@@ -174,15 +175,15 @@ function login_client_db($email, $pass) {
 
 		$rec = mysqli_fetch_array($result);
 		$hash = $rec['password'];
+		if ($rec['is_approved'] == 0)
+			return array('status' => false,
+				     'err_message' => 'Registration not approved yet');
 		if (!password_verify($pass, $hash)){
 			//log failed login attempt
 			set_fail_login_db($email,1);
 			return array('status' => false,
 				     'err_message' => 'Wrong email or password');
 		}
-		if ($rec['is_approved'] == 0)
-			return array('status' => false,
-				     'err_message' => 'Registration not approved yet');
 		
 		//authentication successful, so clear previous failed login attempts 		     
 		set_fail_login_db($email,0);
@@ -447,7 +448,7 @@ function set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value
 		if($tancode_id > 0){
 			print_debug_message('Checking if tancode is valid...');
 			$query = 'select is_used from TRANSACTION_CODES where
-				where account_number="' . $account_num_src . '"
+				account_number="' . $account_num_src . '"
 				and tancode_id="' . $tancode_id . '"
 				and tancode="' . $tancode_value . '"';
 			$result = mysqli_query($con, $query);
@@ -514,7 +515,7 @@ function set_trans_file_db($email, $account_num_src, $tancode_id, $tancode_value
 			$params[$i][1] = floatval($params[$i][1]);
 		}
 
-		for ($i = 0 ; $i < count($params)-1 ; $i++) {
+		for ($i = 1 ; $i < count($params)-1 ; $i++) {
 
 			$res_arr = transfer_money($account_num_src, $params[$i][0], $params[$i][1], $params[$i][2], 0);
 			if ($res_arr['status'] == false)
@@ -702,6 +703,9 @@ function login_emp_db($email, $pass) {
 				     'err_message' => 'Wrong email or password');
 
 		$rec = mysqli_fetch_array($result);
+		if ($rec['is_approved'] == 0)
+			return array('status' => false,
+				     'err_message' => 'Registration not approved yet');
 		$hash = $rec['password'];
 		if (!password_verify($pass, $hash)){
 			//log failed login attempt
@@ -709,11 +713,9 @@ function login_emp_db($email, $pass) {
 			return array('status' => false,
 				     'err_message' => 'Wrong email or password');
 		}
-		if ($rec['is_approved'] == 0)
-			return array('status' => false,
-				     'err_message' => 'Registration not approved yet');
+
 				     
-		//authentication successful, so clear previous failed login attempts 		     
+		//authentication successful, so clear previous failed login attempts
 		set_fail_login_db($email,0);
 		close_dbconn($con);
 
@@ -1298,14 +1300,15 @@ function set_fail_login_db($email,$flag){
 
 // Check if this email has exceeded the number of failed login attemtps
 function check_fail_attempts_db($email){
-	
+	global $MAX_FAIL_ATTEMPTS;
+
 	try {
 		$con = get_dbconn();
 		if ($con == null)
 			return -1;
 
 		print_debug_message('Checking if email exceeded max failed login attempts...');
-		$query = 'select last_fail_login, fail_logins from USERS
+		$query = 'select now() as now, last_fail_login, fail_logins from USERS
 			  where email="' . $email . '"';
 		$result = mysqli_query($con, $query);
 		$num_rows = mysqli_num_rows($result);
@@ -1316,7 +1319,7 @@ function check_fail_attempts_db($email){
 					return 0;
 				}else{
 					// if timeout for max failed login attempts has expired
-					if(time() - $TIMEOUT_PERIOD > $rec['last_fail_login']){
+					if($rec['now'] - $TIMEOUT_PERIOD > $rec['last_fail_login']){
 						set_fail_login_db($email,0);
 						return 0;
 					} else{

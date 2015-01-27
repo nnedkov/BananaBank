@@ -153,33 +153,33 @@ function get_trans_client() {
 }
 
 function get_trans_client_pdf() {
-
+	
 	print_debug_message('Checking if parameters were set in the session during login...');
 	session_start();
 	$res_arr = is_valid_session();
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
-	session_write_close();
 
 	if ($_SESSION['is_employee'] == 'true')
 		return error('Invalid operation for employee');
 
 	$account_num = $_SESSION['account_num'];
-
 	$res_arr = get_trans_client_db($account_num);
 	if ($res_arr['status'] == false)
 		return error($res_arr['err_message']);
 
-	$filename = __DIR__ . '/../.bank_downloads/' .  $res_arr['account_num']  . '.pdf';
-	shell_exec('sudo /var/www/banana_bank/.bash/cleaner.sh ' . $filename);
+	$filename = '/var/www/banana_bank/.bank_downloads/' .  $account_num  . '.pdf';
+	#shell_exec('sudo /var/www/banana_bank/.bash/cleaner.sh ' . $filename);
 
 	$html = output_trans_hist_html($account_num, $res_arr['trans_recs']);
 	$mpdf = new mPDF();
 	$mpdf->WriteHTML($html);
 	$mpdf->Output($filename, 'F');
 	$_SESSION['filename'] = $filename;
-	$res = array('status' => 'true', 'url' => 'downloads.php');
+	session_write_close();
+	$res = array('status' => 'true', 'url' => 'download.php');
 	echo json_encode($res);
+	return;
 }
 
 function get_tancode_id() {
@@ -302,6 +302,7 @@ function set_trans_file() {
 
 	//getting parsed file contents
 	$params = parse_file($res_arr['filename']);
+
 	if($params == false)
 		return error('Uploaded file does not comply with rules');
 	

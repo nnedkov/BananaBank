@@ -95,14 +95,34 @@ function getAccountClient()
                 document.getElementById("accountEmail").innerHTML=resp.email; 
 				document.getElementById("accountBalance").innerHTML=resp.balance; 
 				document.getElementById("accountNumber").innerHTML=resp.account_number;
-				var downLink = "<a href='../downloads/"+resp.account_number+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
-				document.getElementById("downloadButtonClient").innerHTML=downLink; 
+				//var downLink = "<a href='download.php' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
+				//var downLink = "<input type='image' name='imageField'  id='downloadTransactionsClient' src='images/ButtonDownloadTransactions.gif' />";
+				//document.getElementById("downloadButtonClient").innerHTML=downLink; 
+				//var scsLink = "<a href='../exe/SCS"+resp.account_number+".jar' target='_blank'><img src='images/ButtonDownloadNewSCS.gif'/></a>";
+				//document.getElementById("downloadSCS").innerHTML=scsLink;
             } else {
 		alert(resp.message);
 	    }
         }
     });
 }
+//DOWNLOAD TRANSACTION PDF CLIENT
+$(document).ready(function(){
+	$("#downloadTransactionsClient").click(function(event){
+      event.preventDefault();
+		var data = "action=get_trans_client_pdf";
+		$.post(requestUrl, data, success, "json");
+        function success (resp)
+        {
+            if (resp.status=="true")
+            {
+				window.open(resp.url, "_self");
+            }else {
+				alert(resp.message);
+			}
+        } 
+    });
+});
 //GET HISTORY CLIENT
 function getHistoryClient()
 {
@@ -170,24 +190,6 @@ $(document).ready(function(){
     });
 });
 
-
-//DOWNLOAD SCS
-function setSCSToDownload()
-{
-  $(function(){    
-    var data = "action=download_scs_exe";
-        $.post(requestUrl, data, success, "json");
-        function success (resp)
-        {
-            if (resp.status=="true")
-            {
-				
-            } else {
-	      alert(resp.message);
-	    }
-        }
-    });
-}
 //GET TAN CODE CLIENT
 function getTancode()
 {
@@ -203,23 +205,6 @@ function getTancode()
 				}else{
 					document.getElementById("tanCode").innerHTML="TAN from SCS:"	
 				}
-				
-            } else {
-	      alert(resp.message);
-	    }
-        }
-    });
-}
-//GET PDF CLIENT
-function setFileToDownload()
-{
-  $(function(){    
-    var data = "action=get_trans_client_pdf";
-        $.post(requestUrl, data, success, "json");
-        function success (resp)
-        {
-            if (resp.status=="true")
-            {
 				
             } else {
 	      alert(resp.message);
@@ -279,24 +264,6 @@ function uploadDone() { //Function will be called when iframe is loaded
 		alert("Upload Failed: " + data.failure);
 	}	
 }
-//DOWNLOAD PDF CLIENT
-$(document).ready(function(){
-	$("#downloadTransactionsClient").click(function(event){
-		event.preventDefault();
-        var data = "action=get_trans_client_pdf";
-        $.post(requestUrl, data, success, "json");
-        function success(resp)
-        {
-            if (resp.status=="true")//TODO
-            {
-				window.open("clientInitial.html", "_self");
-            } else {
-		alert(resp.message);
-	    }
-        }
-    });
-});
-
 //EMPLOYEE
 
 //LOGIN EMPLOYEE
@@ -567,31 +534,34 @@ function accountDetails()
 					row.append($("<td>" + resp.balance + "</td>"));
 					row.append($("<td>" + resp.account_number + "</td>"));
 					 
-		var downLink = "Transactions <a href='../downloads/"+resp.account_number+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
+		//var downLink = "Transactions <a href='../downloads/"+resp.account_number+".pdf' target='_blank'><img src='images/ButtonDownloadTransactions.gif'/></a>";
+		var downLink = "Transactions <input type='image' name='imageField'  id='downloadTransactionsEmp' src='images/ButtonDownloadTransactions.gif' />";
 		document.getElementById("transactions").innerHTML=downLink; 
             }else{alert(resp.message);}
         }
     });
 	
 }
-//DOWNLOAD FILE EMP
-function setFileToDownloadEmp()
-{
-  $(function(){    
-    var email = localStorage.getItem('_email');
-    var data = "action=get_trans_emp_pdf&email="+email;
-        $.post(requestUrl, data, success, "json");
+
+//DOWNLOAD TRANSACTION PDF EMPLOYEE
+$(document).ready(function(){
+	$("#downloadTransactionsEmp").click(function(event){
+      event.preventDefault();
+		var email = localStorage.getItem('_email');
+		var data = "action=get_trans_emp_pdf&email="+email;
+		$.post(requestUrl, data, success, "json");
+        
         function success (resp)
         {
             if (resp.status=="true")
             {
-				
-            } else {
-	      alert(resp.message);
-	    }
-        }
+				window.open(resp.url, "_self");
+            }else {
+				alert(resp.message);
+			}
+        } 
     });
-}
+});
 //ALL TRANSACTIONS EMP
 function transactionsEmployee()
 {

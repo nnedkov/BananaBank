@@ -250,7 +250,7 @@ function upload_file() {
 	    return array('status' => false,
 			 'err_message' => 'Sorry, only text files are allowed');
 
-	$target = '/var/www/.bank_uploads/'.'transaction.txt';
+	$target = '/var/www/banana_bank/.bank_uploads/transaction_' . substr(basename($_FILES['uploadFile']['name']), 0, 3) . '.txt';
 
 	if (move_uploaded_file($_FILES['uploadFile']['tmp_name'], $target))
 		print_debug_message('The file ' . basename($_FILES['uploadFile']['name']) . ' has been uploaded.');
@@ -273,13 +273,14 @@ function parse_file($filename) {
 		$contents .= $lines[$i];
 	
     $handle = popen('/var/www/banana_bank/.exe/set_trans_file ' . $filename, 'r');
-    
+
     //getting contents of file (except scs_token) in case it needs to be hashed for SCS
-    
-	array_push($params, $contents);
+
+	$words = $contents;
+		
 	while ($s = fgets($handle)) {
-		$words = str_word_count($s, 1, '1234567890');
 		array_push($params, $words);
+		$words = str_word_count($s, 1, '1234567890');
 	}
 	
 	pclose($handle);
